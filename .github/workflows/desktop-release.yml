@@ -1,0 +1,74 @@
+name: Build desktop installers
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+            arch: arm64
+            executable: release/mac-arm64/WetLSP Explorer.app/Contents/MacOS/WetLSP Explorer
+          - os: macos-15-intel
+            platform: mac
+            arch: x64
+            executable: release/mac/WetLSP Explorer.app/Contents/MacOS/WetLSP Explorer
+          - os: windows-latest
+            platform: win
+            arch: x64
+            executable: release/win-unpacked/WetLSP Explorer.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node --test desktop/server.test.mjs
+      - run: npm run lint
+      - run: npm run build:desktop
+      - name: Package installer
+        run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Launch packaged app twice with external network blocked
+        run: node scripts/desktop-smoke.mjs "${{ matrix.executable }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            release/*.dmg
+            release/*.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: installers
+          merge-multiple: true
+      - name: Publish installers to the private repository release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd installers
+          sha256sum *.dmg *.exe > SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" *.dmg *.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --verify-tag --title "WetLSP Explorer $GITHUB_REF_NAME" --notes-file ../desktop/RELEASE-NOTES.md

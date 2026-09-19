@@ -36,10 +36,34 @@ any file server. For a subpath deployment, build with `VITE_BASE=/my-path/`.
 
 ### Installing it as a desktop app
 
-Open the app in Chrome or Edge and use **Install app** from the address bar. It
-then opens from the Dock or Start menu in its own window and works offline.
-Installation and offline relaunch were verified in macOS Chrome 153 using an
-isolated installed-app profile. Windows, Safari and Firefox still need QA.
+Download the **Mac DMG** or **Windows EXE** from
+[Releases](https://github.com/bhagyeshsagole/wetlsp-explorer/releases/latest).
+The desktop app bundles Electron, the app shell, and both scientific readers;
+no browser installation or hosted website is needed. See [SETUP.md](SETUP.md)
+for installation, unsigned-build warnings, and offline use.
+
+### Building desktop releases (developers)
+
+```sh
+npm ci
+npm run desktop           # build and launch locally
+npm run desktop:dist      # create this OS's installer in release/
+npm run test:desktop      # offline launch, DuckDB query, OPFS relaunch check
+```
+
+The desktop release workflow builds Apple silicon and Intel DMGs plus a Windows
+x64 NSIS installer on their respective OS runners. Pushing a version tag such as
+`v1.0.0` publishes all three installers to a **private GitHub Release**, after
+packaged-app smoke checks pass. Workflow dispatch builds downloadable Actions
+artifacts without creating a release. Update package.json/version and lockfile
+before tagging future versions.
+
+Desktop source lives in `desktop/`; packaging is in `electron-builder.yml`.
+The sandboxed renderer has no Node access. A read-only loopback server serves
+only bundled files at a stable origin; OPFS data persists between app upgrades.
+Desktop builds disable the PWA service worker so an older shell cannot override
+the installed version. Updates are manual. Initial installers are unsigned;
+Apple notarization and Windows signing require maintainer credentials.
 
 ---
 

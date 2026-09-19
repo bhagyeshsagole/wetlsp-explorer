@@ -20,6 +20,8 @@ export async function cacheEngineBundle(bundle: {
 }
 
 export async function requireOfflineShell(): Promise<void> {
+  // The desktop installer includes the entire shell and both WASM engines.
+  if (import.meta.env.MODE === 'desktop') return;
   if (!('serviceWorker' in navigator)) {
     throw new Error('This browser does not support offline app storage.');
   }

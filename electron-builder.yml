@@ -1,0 +1,42 @@
+appId: edu.wetlsp.explorer
+productName: WetLSP Explorer
+copyright: WetLSP Explorer contributors
+directories:
+  output: release
+files:
+  - dist/**/*
+  - desktop/main.mjs
+  - desktop/server.mjs
+  - desktop/smoke.mjs
+  - package.json
+  - '!node_modules/**/*'
+asar: true
+npmRebuild: false
+artifactName: WetLSP-Explorer-${version}-${os}-${arch}.${ext}
+mac:
+  category: public.app-category.education
+  icon: public/icons/icon-512.png
+  target: dmg
+  identity: null
+  notarize: false
+dmg:
+  title: WetLSP Explorer
+  contents:
+    - x: 130
+      y: 180
+      type: file
+    - x: 410
+      y: 180
+      type: link
+      path: /Applications
+win:
+  icon: public/icons/icon-512.png
+  target: nsis
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+publish: null

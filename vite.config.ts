@@ -7,7 +7,7 @@ import { fileURLToPath, URL } from 'node:url';
 // Deployment base. Set VITE_BASE=/my-subpath/ for GitHub Pages project sites.
 const base = process.env.VITE_BASE ?? '/';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base,
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
@@ -41,6 +41,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      // Desktop always serves its bundled version; a cached web shell must not
+      // override a newly installed release.
+      disable: mode === 'desktop',
       // injectManifest, not generateSW: the service worker is a real source file
       // (src/sw.ts) bundled by Vite, which keeps the runtime caching rules in one
       // reviewable place.
@@ -86,4 +89,4 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
-});
+}));

@@ -3,6 +3,8 @@ node_modules/
 dist/
 dist-ssr/
 coverage/
+release/
+desktop-smoke-results/
 *.tsbuildinfo
 
 # Local environment values and operating-system files

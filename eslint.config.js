@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'public/duckdb', 'node_modules'] },
+  { ignores: ['dist', 'release', 'desktop-smoke-results', 'public/duckdb', 'node_modules'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -28,7 +28,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['**/*.config.{js,ts}', 'scripts/**/*.mjs'],
+    files: ['**/*.config.{js,ts}', 'scripts/**/*.mjs', 'desktop/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
 );
