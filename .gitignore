@@ -1,0 +1,26 @@
+# Dependencies and generated builds
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+
+# Local environment values and operating-system files
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+
+# DuckDB binaries are restored from the npm package during build
+public/duckdb/*
+!public/duckdb/.gitkeep
+
+# Internal development handoff and acceptance evidence
+HANDOFF.md
+prompt.md
+validation/
+scripts/acceptance.mjs
+scripts/pixel-probe.mjs
+playwright-report/
+test-results/

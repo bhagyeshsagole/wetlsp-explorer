@@ -1,0 +1,127 @@
+/**
+ * Landing state: a quiet introduction and one focused local-data dropzone.
+ * It is the whole app until a dataset exists.
+ */
+import { useState } from 'react';
+import { ArrowUpRight, CloudDownload, FolderOpen, Files, Moon, Sun, WifiOff, Waves } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
+import { useImportActions } from './DropTarget';
+import { Button, ProgressBar } from './ui';
+import { driveConfigHint, driveSelectionMode, importFromDrive, isDriveConfigured } from '@/lib/drive';
+import { useDark } from '@/views/shared';
+
+export function Hero() {
+  const { openFolder, openFiles } = useImportActions();
+  const importEntries = useAppStore((s) => s.importEntries);
+  const toast = useAppStore((s) => s.toast);
+  const ingest = useAppStore((s) => s.ingest);
+  const online = useAppStore((s) => s.online);
+  const dark = useDark();
+  const setTheme = useAppStore((s) => s.setTheme);
+  const setView = useAppStore((s) => s.setView);
+  const setHeroDismissed = useAppStore((s) => s.setHeroDismissed);
+  const catalogCount = useAppStore((s) => s.catalog.length);
+  const [driveBusy, setDriveBusy] = useState(false);
+
+  const driveReady = isDriveConfigured() && online;
+
+  const onDrive = async () => {
+    setDriveBusy(true);
+    try {
+      const { entries, folderHint } = await importFromDrive({
+        onProgress: () => undefined,
+      });
+      if (entries.length > 0) await importEntries(entries, 'drive', folderHint);
+    } catch (err) {
+      toast({
+        kind: 'error',
+        title: 'Drive import failed',
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setDriveBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex h-full w-full flex-col overflow-y-auto bg-[var(--bg)]">
+      <header className="mx-auto flex w-full max-w-[1240px] shrink-0 items-center justify-between px-8 py-7">
+        <div className="flex items-center gap-3">
+          <Waves size={24} strokeWidth={1.6} className="text-[var(--accent)]" />
+          <span className="text-[15px] font-semibold tracking-[-0.025em]">WetLSP <span className="font-normal text-[var(--text-muted)]">Explorer</span></span>
+        </div>
+        <button
+          onClick={() => setTheme(dark ? 'light' : 'dark')}
+          className="rounded-md p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--text)]"
+          aria-label="Toggle dark mode"
+        >
+          {dark ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+      </header>
+      <main className="mx-auto flex w-full max-w-[1104px] flex-1 items-center px-8 py-12">
+        <div className="grid w-full items-center gap-14 md:grid-cols-[1.1fr_1fr]">
+          <div>
+            <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--accent)]">Wetland land surface phenology</p>
+            <h1 className="max-w-[540px] text-[clamp(2.8rem,4.7vw,4.4rem)] font-normal leading-[1.04] tracking-[-0.05em]">Explore wetland phenology</h1>
+            <p className="mt-6 max-w-[40ch] text-[16px] leading-[1.7] text-[var(--text-muted)]">
+              Follow seasonal change, from individual pixels to the wetland landscape.
+              Open a site to explore its time series and phenometric maps.
+            </p>
+            {catalogCount > 0 && (
+              <button
+                onClick={() => { setHeroDismissed(true); setView('catalog'); }}
+                className="mt-8 inline-flex items-center gap-2 border-b border-[var(--border-strong)] pb-1.5 text-[13px] font-medium text-[var(--accent)] transition-colors hover:border-[var(--accent)]"
+              >
+                Browse the {catalogCount}-site catalog without uploading <ArrowUpRight size={14} />
+              </button>
+            )}
+          </div>
+          <div className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-8">
+            {ingest.active ? (
+              <div className="py-7">
+                <ProgressBar
+                  fraction={ingest.progress?.fraction ?? null}
+                  label={`${ingest.progress?.phase ?? 'Working'}${ingest.progress?.detail ? ` · ${ingest.progress.detail}` : ''}`}
+                />
+                <div className="mt-3 flex justify-center">
+                  <Button size="sm" variant="ghost" onClick={() => useAppStore.getState().cancelImport()}>Cancel</Button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md border border-[var(--border)] text-[var(--accent)]"><FolderOpen size={23} strokeWidth={1.4} /></div>
+                <h2 className="text-[20px] font-medium tracking-[-0.025em]">Start with a site folder</h2>
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-muted)]">Drag it onto this window, or choose it below.</p>
+                <div className="mt-7 flex flex-col gap-2.5">
+                  <Button className="w-full" size="lg" variant="primary" icon={<FolderOpen size={16} />} onClick={openFolder}>Upload folder</Button>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    icon={driveBusy ? undefined : <CloudDownload size={17} />}
+                    onClick={onDrive}
+                    disabled={!driveReady || driveBusy}
+                    title={!isDriveConfigured() ? driveConfigHint() : !online ? 'Drive import needs a network connection.' : undefined}
+                  >
+                    {driveBusy
+                      ? 'Opening Drive…'
+                      : driveSelectionMode() === 'folder'
+                        ? 'Import Drive folder'
+                        : 'Import Drive files'}
+                  </Button>
+                </div>
+                <p className="mt-4 text-center text-[12px] text-[var(--text-muted)]">
+                  <button onClick={openFiles} className="inline-flex items-center gap-1.5 hover:text-[var(--text)]"><Files size={12} />pick individual files</button>
+                </p>
+                <p className="mt-7 border-t border-[var(--border)] pt-5 text-[11.5px] leading-relaxed text-[var(--text-muted)]">Your files stay on this device. Imported datasets are saved here for offline work.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+      <footer className="mx-auto flex w-full max-w-[1240px] shrink-0 items-center justify-between gap-4 px-8 py-7 text-[11px] text-[var(--text-muted)]">
+        <span>Pixel time series · Phenometric maps · Site catalog</span>
+        {!online && <span className="inline-flex items-center gap-1.5"><WifiOff size={12} />Offline — local datasets still work</span>}
+      </footer>
+    </div>
+  );
+}

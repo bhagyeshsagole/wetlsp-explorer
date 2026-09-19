@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WetLSP Explorer</title>
+    <meta
+      name="description"
+      content="Explore Wetland Land Surface Phenology datasets — pixel time series, phenometric rasters and site catalogs — entirely in your browser, online or off."
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f7f4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0f14" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link
+      rel="preload"
+      href="./fonts/inter-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="./fonts/inter.css" />
+    <script>
+      // Paint the correct theme before first frame so installed launches never flash.
+      (function () {
+        try {
+          var stored = localStorage.getItem('wetlsp.theme');
+          var dark =
+            stored === 'dark' ||
+            (stored === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {
+          /* private mode — fall through to light */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
