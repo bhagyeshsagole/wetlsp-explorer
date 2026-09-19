@@ -17,10 +17,12 @@ jobs:
           - os: macos-latest
             platform: mac
             arch: arm64
+            app: release/mac-arm64/WetLSP Explorer.app
             executable: release/mac-arm64/WetLSP Explorer.app/Contents/MacOS/WetLSP Explorer
           - os: macos-15-intel
             platform: mac
             arch: x64
+            app: release/mac/WetLSP Explorer.app
             executable: release/mac/WetLSP Explorer.app/Contents/MacOS/WetLSP Explorer
           - os: windows-latest
             platform: win
@@ -42,6 +44,12 @@ jobs:
         run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      # An unsealed signature is what made macOS call earlier builds "damaged",
+      # and that is unrecoverable for anyone who downloads the DMG.
+      - name: Verify macOS code signature is sealed
+        if: matrix.app != ''
+        run: codesign --verify --deep --strict --verbose=2 "${{ matrix.app }}"
+
       - name: Launch packaged app twice with external network blocked
         run: node scripts/desktop-smoke.mjs "${{ matrix.executable }}"
       - uses: actions/upload-artifact@v4

@@ -12,11 +12,16 @@ files:
   - '!node_modules/**/*'
 asar: true
 npmRebuild: false
+# Restores a valid ad-hoc signature that electron-builder's repacking invalidates.
+# Without it, Apple Silicon reports the app as "damaged" and refuses to open it.
+afterPack: scripts/adhoc-sign.mjs
 artifactName: WetLSP-Explorer-${version}-${os}-${arch}.${ext}
 mac:
   category: public.app-category.education
   icon: public/icons/icon-512.png
   target: dmg
+  # No Developer ID certificate: electron-builder skips its own signing and
+  # scripts/adhoc-sign.mjs signs with the ad-hoc identity instead.
   identity: null
   notarize: false
 dmg:

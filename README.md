@@ -41,11 +41,15 @@ GitHub account to use a file someone shares with you.
 <details>
 <summary><strong>My computer warns me not to open it</strong></summary>
 
-Expected — these lab builds are not yet signed by Apple or Microsoft.
+Expected — these lab builds are not signed with a paid Apple or Microsoft
+certificate. You confirm once, then it never asks again.
 
-**Mac:** try to open it once, then **System Settings → Privacy & Security →
-Open Anyway**.
+**Mac:** double-click the app, click **Done** on the warning, then go to
+**System Settings → Privacy & Security → Open Anyway** and confirm **Open**.
 **Windows:** **More info → Run anyway**.
+
+If a Mac instead says the app is **damaged**, you have a release older than
+v1.0.3 — download the latest one.
 
 Only do this for installers from this repository or your lab.
 [Full details in SETUP.md](SETUP.md).

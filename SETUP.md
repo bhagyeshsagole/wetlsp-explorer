@@ -29,12 +29,20 @@ you the installer file. Do not download **Source code**: that is for developers.
 4. Eject the installer disk when you are done. You can delete the downloaded DMG.
 5. To keep the app handy, right-click its Dock icon → **Options → Keep in Dock**.
 
-**First-launch warning:** These initial lab builds are not signed or notarized
-by Apple. If macOS blocks the app, attempt to open it once, then go to
-**System Settings → Privacy & Security**, scroll to the security message for
-WetLSP Explorer, and choose **Open Anyway**. Confirm **Open** when asked.
-Only do this for the installer provided by your lab. If the button is unavailable
-on a managed computer, contact your IT team; do not disable system security.
+**First launch shows a warning — this is expected.** These lab builds are signed,
+but not with a paid Apple Developer certificate, so macOS asks you to confirm the
+first time only:
+
+1. Double-click the app. macOS says **"Apple could not verify WetLSP Explorer is
+   free of malware."** Click **Done**. Do not click Move to Trash.
+2. Open **System Settings → Privacy & Security** and scroll down to the message
+   about WetLSP Explorer.
+3. Click **Open Anyway**, then confirm **Open**.
+
+The app opens, and every launch after that is a normal double-click. Right-click
+→ Open no longer works on recent macOS versions; use the steps above. Only do
+this for the installer provided by your lab. If **Open Anyway** is missing on a
+managed computer, contact your IT team; do not disable system security.
 
 ## Install on Windows
 
@@ -88,8 +96,9 @@ Always keep the original dataset folders as your permanent copy.
 
 - **Download page says 404:** ask the owner for repository access or the installer file.
 - **App is blocked:** follow the first-launch note for your OS, or contact institutional IT.
-- **Mac says the app is damaged:** download it again from the official release; if it
-  still fails, send the exact message to the owner. Do not remove security checks.
+- **Mac says the app is damaged:** you are on a release before v1.0.3, which shipped
+  with a broken signature. Download the latest release and use that installer. Do not
+  remove security checks.
 - **A folder does not load:** choose a single complete site folder containing parquet
   and/or NetCDF data, and wait for the import to finish.
 - **Local port 47831 is in use:** close another copy of WetLSP Explorer. If the message
