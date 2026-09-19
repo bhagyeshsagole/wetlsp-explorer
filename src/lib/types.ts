@@ -45,7 +45,6 @@ export interface SiteManifest {
   warnings: string[];
   totalBytes: number;
   importedAt: number;
-  source: 'local' | 'drive';
 }
 
 /** Key/value pairs read from `pixels_meta`. */

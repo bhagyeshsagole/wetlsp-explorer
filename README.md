@@ -1,270 +1,78 @@
 # WetLSP Explorer
 
-Looking to install the app? Start with the no-code guide in
-**[SETUP.md](SETUP.md)**. End users do not need Node.js, GitHub, or Terminal.
+Explore wetland vegetation through the seasons. Open a WetLSP site folder to
+view EVI time series, select pixels on a map, and compare annual phenology.
 
-An installable, offline-capable web app for exploring **WetLSP** (Wetland Land
-Surface Phenology) datasets. It replaces the R Shiny explorer: same
-visualisations, no server, and the whole thing keeps working with the network
-off.
+WetLSP Explorer brings the web app to your desktop as a **Mac app** or
+**Windows app**. Download an installer, open it, and start exploring.
 
-Everything runs client-side. Parquet is queried with DuckDB-WASM, NetCDF-4 is
-read with h5wasm, and imported datasets live in the browser's Origin Private
-File System. **No data ever leaves the machine** — the only network traffic is
-basemap tiles and, if you use it, your own Google Drive.
+## Download
 
----
+**[Get the latest release](https://github.com/bhagyeshsagole/wetlsp-explorer/releases/latest)**
 
-## Quick start
+Under **Assets**, choose the installer for your computer:
 
-```sh
-npm install
-npm run dev          # http://localhost:5173
-```
+| Computer | File to download |
+| --- | --- |
+| Mac with Apple silicon — M1, M2, M3, M4 or newer | `WetLSP-Explorer-…-mac-arm64.dmg` |
+| Mac with an Intel processor | `WetLSP-Explorer-…-mac-x64.dmg` |
+| Windows 10 or 11 — Intel/AMD 64-bit | `WetLSP-Explorer-…-win-x64.exe` |
 
-Then drag a site folder (e.g. `CA-DB2/`) anywhere onto the window.
+On a Mac, **Apple menu → About This Mac** shows your chip type.
+Choose a **DMG** or **EXE** under Assets; the **Source code** archives are not installers.
 
-```sh
-npm run build        # static bundle in dist/
-npm run preview      # serve the built app
-npm test             # unit tests
-npm run lint
-```
+This repository is private. If the download page shows **404**, sign in with an
+invited GitHub account or ask the lab for the installer file directly.
 
-`dist/` is plain static files — deploy it to GitHub Pages, Netlify, Vercel or
-any file server. For a subpath deployment, build with `VITE_BASE=/my-path/`.
+## Install and open
 
-### Installing it as a desktop app
+**Mac:** Double-click the DMG. In the window that opens, drag the **WetLSP
+Explorer app icon** into **Applications**. Open the app from Applications.
+The DMG is the installer; you do not need to move the DMG itself into Applications.
 
-Download the **Mac DMG** or **Windows EXE** from
-[Releases](https://github.com/bhagyeshsagole/wetlsp-explorer/releases/latest).
-The desktop app bundles Electron, the app shell, and both scientific readers;
-no browser installation or hosted website is needed. See [SETUP.md](SETUP.md)
-for installation, unsigned-build warnings, and offline use.
+**Windows:** Double-click the EXE. It installs for your account and opens the
+app. Next time, use **WetLSP Explorer** in the Start menu or the desktop shortcut.
 
-### Building desktop releases (developers)
+The current lab builds are unsigned, so your operating system may show a
+first-launch warning. See **[the setup guide](SETUP.md)** for the exact steps,
+updates, and troubleshooting.
 
-```sh
-npm ci
-npm run desktop           # build and launch locally
-npm run desktop:dist      # create this OS's installer in release/
-npm run test:desktop      # offline launch, DuckDB query, OPFS relaunch check
-```
+## Open your first site
 
-The desktop release workflow builds Apple silicon and Intel DMGs plus a Windows
-x64 NSIS installer on their respective OS runners. Pushing a version tag such as
-`v1.0.0` publishes all three installers to a **private GitHub Release**, after
-packaged-app smoke checks pass. Workflow dispatch builds downloadable Actions
-artifacts without creating a release. Update package.json/version and lockfile
-before tagging future versions.
+1. Click **Upload folder** and choose a single site folder, such as **CA-DB2**.
+2. Wait for the import to finish. Large sites may take a little while.
+3. Choose a view and explore your data.
 
-Desktop source lives in `desktop/`; packaging is in `electron-builder.yml`.
-The sandboxed renderer has no Node access. A read-only loopback server serves
-only bundled files at a stable origin; OPFS data persists between app upgrades.
-Desktop builds disable the PWA service worker so an older shell cannot override
-the installed version. Updates are manual. Initial installers are unsigned;
-Apple notarization and Windows signing require maintainer credentials.
+You can also drag a site folder into the app or select individual files.
+Keep each site's parquet files, batch subfolders, and annual NetCDF (`.nc`)
+files together. Both single-file and batched `_ds` datasets are supported.
 
----
+## What you can explore
 
-## What it does
+| View | Use it to |
+| --- | --- |
+| **Overview** | Locate a site and review its observation dates, pixel coverage, available years, and metadata. |
+| **Time Series** | Compare raw observations and spline curves, inspect daily means and interquartile ranges, and export filtered results. |
+| **Pixel Map** | Select individual pixels or draw a region, then inspect the selection's time series. |
+| **Phenometrics** | Examine seasonal timing, greenness, and quality layers; compare up to four site-year rasters. |
+| **Catalog** | Search the bundled 95-site catalog and export site information. |
 
-| View | |
-|---|---|
-| **Overview** | World map of the site catalog; imported sites in the accent colour. Click a marker to open a site. Inspector summarizes actual observation dates, raw/spline meaning, spatial coverage and annual phenology files, with analysis shortcuts, catalog context and CRS. |
-| **Time Series** | Per-pixel EVI "spaghetti", the bold daily mean and a shaded interquartile ribbon, per series. Year, series, date range and sample size are controls; the mean and quartiles are computed in SQL. A 3D ribbon renders the same filtered rows as a surface over date × pixel. |
-| **Pixel Map** | Every pixel over a basemap. Click to toggle one, or drag a rectangle or lasso to take a group. Clicking a pixel shows its EVI sparkline. Selections flow into the Time Series view. A hexbin skyline is the 3D mode. |
-| **Phenometrics** | The 24 NetCDF layers as a browsable table, rendered with the WetLSP palettes. One to four site-years compare side by side on a shared colour scale, as a plain figure, georeferenced on a basemap, or as an extruded 3D relief. |
-| **Catalog** | The whole site catalog, searchable and sortable, with CSV export. |
+## Your data and offline use
 
-Press <kbd>⌘K</kbd> (<kbd>Ctrl K</kbd>) for the command palette, or
-<kbd>⌘1</kbd>–<kbd>⌘5</kbd> to switch views.
+Local datasets are processed and saved on your computer. The installer includes
+the app, catalog, and scientific readers, so you can import local files and
+analyze them without internet. Basemap imagery needs a connection unless its
+tiles have already been cached.
 
-The workspace now defaults to light mode, with a quiet background, white
-panels, restrained teal controls and a continuous inspector. Dark mode and an
-explicit system-theme setting remain available.
+Keep your original dataset folders as your permanent copy. Imported sites and
+preferences are stored separately from the app and are retained when you
+replace it with a newer version.
 
----
+## Updates
 
-## Data it accepts
+Close the app, download the new DMG or EXE from
+**[Releases](https://github.com/bhagyeshsagole/wetlsp-explorer/releases/latest)**,
+and install it over your existing copy. On Mac, choose **Replace** when copying
+the app into Applications. On Windows, run the new installer.
 
-Drop a site folder and it is recognised with no configuration. Matching is by
-pattern, never by exact name, because the real exports mix `_` and `-`
-separators.
-
-**Single-file layout** (primary)
-
-```
-CA-DB2/
-├── CA_DB2_pixels_geom.parquet        pixel_id, cell, x, y   (projected metres)
-├── CA_DB2_pixels_meta.parquet        key/value; crs_wkt, site_id, radius_m, …
-├── CA_DB2_pixels_timeseries.parquet  pixel_id, series, date, year, evi
-├── CA-DB2-wetlsp-2021.nc             annual phenometrics, NetCDF-4
-├── …
-└── README_parquet.md / .json
-```
-
-**Batched layout** — a `pixels_*_ds/` directory of parquet parts is treated as
-one logical table:
-
-```
-US-Myb/
-├── pixels_geom_ds/geom_batch_001.parquet, …
-├── pixels_timeseries_ds/ts_batch_001.parquet, …
-├── pixels_meta_ds/meta.parquet
-└── US-Myb-wetlsp-2022.nc
-```
-
-A folder with files missing still imports. The app says what is absent and
-which views are affected, and everything else keeps working.
-
-Pixel coordinates are projected metres, so they are reprojected to WGS84 using
-the `crs_wkt` in `pixels_meta`: the EPSG id is used when the WKT carries one,
-otherwise proj4 reads the WKT directly, otherwise the Transverse Mercator
-parameters are rebuilt by hand.
-
----
-
-## The site catalog
-
-`public/catalog/wetlsp_site_catalog.csv` ships with the app so the Overview map
-and the Catalog view work offline before anything is imported.
-
-The bundled file is the real 95-site export from
-`../wetlsp-data/wetlsp_cyverse_site_catalog_final.csv`. All 95 records have
-coordinates. It is included in the offline app shell.
-
-To replace it with an updated catalog:
-
-```sh
-npm run catalog:import -- /path/to/wetlsp_cyverse_site_catalog_final.csv
-```
-
-Users can also load one at runtime from **Settings → Site catalog**, which
-overrides the bundled copy for that browser. See
-[`public/catalog/README.md`](public/catalog/README.md) for the columns.
-
----
-
-## Google Drive import (optional)
-
-In Google Cloud, enable **Google Drive API** and **Google Picker API**. Create a
-Web OAuth client and add every URL that serves this app under **Authorized
-JavaScript origins**, including the exact scheme and port during development
-(for example `http://localhost:5173`). Create a browser API key, restrict its
-websites to the same origins, and restrict its APIs to Picker and Drive.
-
-Configure the Google Auth Platform consent screen. While its audience is in
-**Testing**, add each scientist's Google account as a test user. Testing grants
-expire after seven days. Then copy `.env.example` to `.env.local`:
-
-```sh
-VITE_GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
-VITE_GOOGLE_API_KEY=xxxxx
-VITE_GOOGLE_APP_ID=123456789012        # numeric Cloud project number
-VITE_GOOGLE_DRIVE_MODE=files
-```
-
-Restart Vite after changing an environment file; these values are embedded at
-build time. They are identifiers and a browser-restricted API key, not a client
-secret. Never put an OAuth client secret in this PWA.
-
-`files` mode is the safe default. It requests Google's non-sensitive
-`drive.file` scope and imports the files the user explicitly selects. Select all
-files for a single-file WetLSP site. This mode cannot recursively enumerate a
-selected folder, because sharing a folder does not share all of its children
-with the app.
-
-For real one-click folder import, including `_ds` sites with many parquet parts,
-set `VITE_GOOGLE_DRIVE_MODE=folder`. The app then requests read-only access to
-Drive and recursively downloads only the folder the user chooses. Google
-classifies `drive.readonly` as a restricted scope. A lab deployment can remain
-Internal (Google Workspace) or use a limited Testing audience; a public External
-deployment must complete Google's verification requirements.
-
-Without configuration—or while offline—the Drive button is disabled and
-explains why. Common errors:
-
-- `origin_mismatch`: add the browser's exact origin to the Web OAuth client.
-- `API_KEY_INVALID` / forbidden Picker: enable both APIs and check key website/API restrictions.
-- `access_denied`: add the account as a test user or allow the app in Workspace Admin.
-- Folder listing returns 403/404: use folder mode, rebuild, and grant `drive.readonly`.
-
----
-
-## How it stays fast
-
-CA-DB2 has 27,875,304 time-series rows. The browser **never materialises the
-entire table**: chart queries filter before returning rows, while metadata and
-per-pixel aggregates return only their small grouped results.
-
-- Every chart query carries a year, a series and an explicit pixel list, and a
-  row `LIMIT`. The builders in `src/engine/sql.ts` throw
-  `UnboundedQueryError` rather than emit anything looser, and
-  `src/engine/sql.test.ts` is the guardrail.
-- The mean and the quartiles are aggregated in SQL, so the ribbon costs the same
-  for 250 pixels or 5000.
-- Parquet files are registered with DuckDB as OPFS file handles, so a 190 MB
-  table is range-read, never loaded.
-- Queries show loading progress and expose cancellation; cancellation during
-  a real query is not yet covered by browser acceptance.
-- NetCDF reading, raster pooling and reprojection run in workers. Plotly still
-  paints on the main thread.
-- Large spaghetti plots retain every sampled pixel but simplify trajectories
-  to at most 50,000 vertices, preserving endpoints and local extrema. A notice
-  identifies this preview; daily means, quartiles and CSV use every observation.
-  Default 250-pixel charts remain at full resolution.
-- Pixel geometry is reprojected once per site and cached in OPFS.
-
-Caps, all adjustable in the UI: 250 sampled pixels by default (max 5000), 500
-selected pixels, a 50,000-cell raster budget.
-
-On the reference CA-DB2 files, 13,955 pixels read and reproject in about 62 ms. Tested
-5,000-pixel charts draw 806,412 and 1,825,000 queried rows in 2.7–2.8 seconds,
-including a 0.5–0.7 second main-thread paint pause.
-
----
-
-## Offline
-
-The app shell — including the Plotly bundle and the h5wasm NetCDF reader — is
-precached by the service worker, so every view works with no network. The
-34 MB DuckDB-WASM binary is deliberately *not* precached: it would make
-installing unbearable. Both the worker JavaScript and the WASM are explicitly
-saved to Cache Storage the first time the query engine starts, including a first
-visit that is not yet controlled by the service worker.
-**Settings → Prepare for offline use** verifies the offline shell and saves both
-engine files before reporting success. It also asks the browser to make storage
-persistent and reports whether the browser granted that request.
-
-Basemap tiles are cached as you browse. With no network the maps fall back to a
-plain background; pixel positions stay correct.
-Light/dark basemaps use OpenFreeMap; satellite imagery uses Esri.
-
----
-
-## Layout
-
-```
-src/
-├── engine/       DuckDB lifecycle, the query API, and the SQL builders
-├── workers/      NetCDF (h5wasm) and reprojection/hit-testing workers
-├── lib/          detection, OPFS, CRS, palettes, the layer dictionary, export
-├── store/        the single Zustand store
-├── views/        the five top-level views, each with its inspector
-├── components/   layout, map, chart and raster primitives
-└── sw.ts         the service worker
-```
-
-Domain rules ported verbatim from `app.R` live in `src/lib/layers.ts` (the
-24-layer dictionary and `phenometricScaleType`) and `src/lib/colorscales.ts`
-(the timing rainbow, the greens, the four QA greys, viridis) — with tests
-pinning the palettes, the valid ranges and the scale/fill handling.
-
----
-
-## Browser support
-
-Desktop-first: current Chrome and Edge are the supported targets. The app needs
-the Origin Private File System; it says so plainly if it is missing. Phones are
-not optimised.
+For help getting started, see **[SETUP.md](SETUP.md)**.

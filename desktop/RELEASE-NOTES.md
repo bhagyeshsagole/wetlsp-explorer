@@ -5,8 +5,9 @@ Download the installer for your computer under **Assets**:
 - **Windows 10/11, Intel or AMD 64-bit:** `win-x64.exe`
 
 On Mac, open the DMG and drag WetLSP Explorer into Applications. On Windows,
-open the EXE to install for your account. No terminal, Node.js, browser install,
-or hosted website is required. All scientific readers are bundled for offline use.
+open the EXE to install for your account. All scientific readers are bundled
+for offline use. The DMG is the installer: drag the app inside it to Applications,
+not the DMG file itself.
 
 These initial lab builds are **unsigned and not Apple-notarized**. macOS may
 require System Settings → Privacy & Security → Open Anyway after the first
@@ -15,7 +16,7 @@ Only approve installers you obtained from this repository or your lab.
 Managed computers may require IT approval.
 
 See [SETUP.md](https://github.com/bhagyeshsagole/wetlsp-explorer/blob/main/SETUP.md)
-for illustrated-in-words installation steps and dataset instructions. Repository
+for step-by-step installation and dataset instructions. Repository
 access is required to download here; the owner can also share the installer
 files directly with colleagues.
 

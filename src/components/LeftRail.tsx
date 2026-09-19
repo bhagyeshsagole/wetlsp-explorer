@@ -188,7 +188,6 @@ function SiteRow({
           </div>
           <div className="mt-1 truncate text-[11px] text-[var(--text-muted)]">
             {formatBytes(state.bytesOnDisk)} · {relativeTime(manifest.importedAt)}
-            {manifest.source === 'drive' && ' · Drive'}
           </div>
         </button>
 

@@ -8,7 +8,6 @@ import { clearCache, requestPersistence } from '@/lib/opfs';
 import { warmEngine } from '@/engine/duckdb';
 import { formatBytes, pluralise } from '@/lib/format';
 import { clearCatalogOverride, loadCatalog, setCatalogOverride } from '@/lib/catalog';
-import { drivePermissionDescription, driveSelectionMode, isDriveConfigured, signOutDrive } from '@/lib/drive';
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const theme = useAppStore((s) => s.theme);
@@ -215,27 +214,6 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
                 </Button>
               )}
             </div>
-          </Card>
-
-          <Card title="Google Drive">
-            {isDriveConfigured() ? (
-              <div className="space-y-2">
-                <p className="text-[12px] leading-snug text-[var(--text-muted)]">
-                  {drivePermissionDescription()} Downloads go directly into this browser's local
-                  storage. Mode: <strong>{driveSelectionMode() === 'folder' ? 'recursive folder' : 'selected files'}</strong>.
-                </p>
-                <Button size="sm" variant="ghost" onClick={signOutDrive}>
-                  Forget the Drive session
-                </Button>
-              </div>
-            ) : (
-              <p className="text-[12px] leading-snug text-[var(--text-muted)]">
-                Not configured. Set <code className="font-mono">VITE_GOOGLE_CLIENT_ID</code> and{' '}
-                <code className="font-mono">VITE_GOOGLE_API_KEY</code> in a{' '}
-                <code className="font-mono">.env</code> file to enable Drive import. Copy{' '}
-                <code className="font-mono">.env.example</code> to start.
-              </p>
-            )}
           </Card>
 
           <Card title="Privacy">

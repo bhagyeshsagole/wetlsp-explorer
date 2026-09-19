@@ -43,7 +43,7 @@ export function useGlobalDrop(): { dragging: boolean } {
         const folderHint = entries[0]?.path.includes('/')
           ? entries[0].path.split('/')[0]
           : undefined;
-        await importEntries(entries, 'local', folderHint);
+        await importEntries(entries, folderHint);
       } catch (err) {
         toast({
           kind: 'error',
@@ -94,7 +94,7 @@ export function useImportActions() {
       if (picked) {
         if (picked.length === 0) return;
         const hint = picked[0]?.path.split('/')[0];
-        await importEntries(picked, 'local', hint);
+        await importEntries(picked, hint);
         return;
       }
       // Browsers without the File System Access API still have webkitdirectory.
@@ -105,7 +105,7 @@ export function useImportActions() {
       input.onchange = async () => {
         if (!input.files?.length) return;
         const entries = entriesFromFileList(input.files);
-        await importEntries(entries, 'local', entries[0]?.path.split('/')[0]);
+        await importEntries(entries, entries[0]?.path.split('/')[0]);
       };
       input.click();
     } catch (err) {
@@ -124,7 +124,7 @@ export function useImportActions() {
     input.accept = '.parquet,.nc,.nc4,.md,.json';
     input.onchange = async () => {
       if (!input.files?.length) return;
-      await importEntries(entriesFromFileList(input.files), 'local');
+      await importEntries(entriesFromFileList(input.files));
     };
     input.click();
   }, [importEntries]);

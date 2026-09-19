@@ -274,10 +274,7 @@ export function isIngestable(d: DetectionResult): boolean {
   return Boolean(d.geom || d.timeseries || d.netcdf.length > 0);
 }
 
-export function manifestFromDetection(
-  d: DetectionResult,
-  source: 'local' | 'drive',
-): SiteManifest {
+export function manifestFromDetection(d: DetectionResult): SiteManifest {
   return {
     siteId: d.siteId,
     layout: d.layout,
@@ -290,6 +287,5 @@ export function manifestFromDetection(
     warnings: d.warnings,
     totalBytes: d.totalBytes,
     importedAt: Date.now(),
-    source,
   };
 }

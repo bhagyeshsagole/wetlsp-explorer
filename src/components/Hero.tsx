@@ -2,18 +2,14 @@
  * Landing state: a quiet introduction and one focused local-data dropzone.
  * It is the whole app until a dataset exists.
  */
-import { useState } from 'react';
-import { ArrowUpRight, CloudDownload, FolderOpen, Files, Moon, Sun, WifiOff, Waves } from 'lucide-react';
+import { ArrowUpRight, FolderOpen, Files, Moon, Sun, WifiOff, Waves } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useImportActions } from './DropTarget';
 import { Button, ProgressBar } from './ui';
-import { driveConfigHint, driveSelectionMode, importFromDrive, isDriveConfigured } from '@/lib/drive';
 import { useDark } from '@/views/shared';
 
 export function Hero() {
   const { openFolder, openFiles } = useImportActions();
-  const importEntries = useAppStore((s) => s.importEntries);
-  const toast = useAppStore((s) => s.toast);
   const ingest = useAppStore((s) => s.ingest);
   const online = useAppStore((s) => s.online);
   const dark = useDark();
@@ -21,27 +17,6 @@ export function Hero() {
   const setView = useAppStore((s) => s.setView);
   const setHeroDismissed = useAppStore((s) => s.setHeroDismissed);
   const catalogCount = useAppStore((s) => s.catalog.length);
-  const [driveBusy, setDriveBusy] = useState(false);
-
-  const driveReady = isDriveConfigured() && online;
-
-  const onDrive = async () => {
-    setDriveBusy(true);
-    try {
-      const { entries, folderHint } = await importFromDrive({
-        onProgress: () => undefined,
-      });
-      if (entries.length > 0) await importEntries(entries, 'drive', folderHint);
-    } catch (err) {
-      toast({
-        kind: 'error',
-        title: 'Drive import failed',
-        detail: err instanceof Error ? err.message : String(err),
-      });
-    } finally {
-      setDriveBusy(false);
-    }
-  };
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-[var(--bg)]">
@@ -94,20 +69,6 @@ export function Hero() {
                 <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-muted)]">Drag it onto this window, or choose it below.</p>
                 <div className="mt-7 flex flex-col gap-2.5">
                   <Button className="w-full" size="lg" variant="primary" icon={<FolderOpen size={16} />} onClick={openFolder}>Upload folder</Button>
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    icon={driveBusy ? undefined : <CloudDownload size={17} />}
-                    onClick={onDrive}
-                    disabled={!driveReady || driveBusy}
-                    title={!isDriveConfigured() ? driveConfigHint() : !online ? 'Drive import needs a network connection.' : undefined}
-                  >
-                    {driveBusy
-                      ? 'Opening Drive…'
-                      : driveSelectionMode() === 'folder'
-                        ? 'Import Drive folder'
-                        : 'Import Drive files'}
-                  </Button>
                 </div>
                 <p className="mt-4 text-center text-[12px] text-[var(--text-muted)]">
                   <button onClick={openFiles} className="inline-flex items-center gap-1.5 hover:text-[var(--text)]"><Files size={12} />pick individual files</button>

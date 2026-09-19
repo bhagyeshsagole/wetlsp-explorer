@@ -30,7 +30,6 @@ export interface IngestResult {
 }
 
 export interface IngestOptions {
-  source?: 'local' | 'drive';
   folderHint?: string;
   onProgress?: (p: ProgressEvent) => void;
   signal?: AbortSignal;
@@ -298,7 +297,7 @@ export async function ingestEntries(
     });
   }
 
-  const manifest = manifestFromDetection({ ...detection, siteId }, opts.source ?? 'local');
+  const manifest = manifestFromDetection({ ...detection, siteId });
   manifest.totalBytes = bytesWritten;
   await saveManifest(manifest);
   await saveSiteMeta(siteId, meta);

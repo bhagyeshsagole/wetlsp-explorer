@@ -118,7 +118,7 @@ interface AppState {
   toast(t: Omit<Toast, 'id' | 'ttl'> & { ttl?: number }): number;
   dismissToast(id: number): void;
 
-  importEntries(entries: IngestEntry[], source?: 'local' | 'drive', folderHint?: string): Promise<void>;
+  importEntries(entries: IngestEntry[], folderHint?: string): Promise<void>;
   cancelImport(): void;
   selectSite(siteId: string): Promise<void>;
   loadSite(siteId: string): Promise<void>;
@@ -288,13 +288,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
   },
 
-  async importEntries(entries, source = 'local', folderHint) {
+  async importEntries(entries, folderHint) {
     if (entries.length === 0) return;
     const controller = new AbortController();
     set({ ingest: { active: true, progress: null, controller } });
     try {
       const { manifest, meta } = await ingestEntries(entries, {
-        source,
         folderHint,
         signal: controller.signal,
         onProgress: (p) =>
