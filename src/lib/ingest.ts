@@ -122,6 +122,10 @@ export async function entriesFromDataTransfer(dt: DataTransfer): Promise<IngestE
 
 /** Show a directory picker via the File System Access API when available. */
 export async function pickDirectory(): Promise<IngestEntry[] | null> {
+  // Electron exposes showDirectoryPicker, but its browser picker can remain
+  // pending without displaying a dialog. Use the native directory file-input
+  // chooser in desktop builds; it also preserves nested batch-folder paths.
+  if (import.meta.env.MODE === 'desktop') return null;
   const picker = (
     window as Window & { showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle> }
   ).showDirectoryPicker;
