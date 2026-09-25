@@ -164,6 +164,29 @@ export interface StorageUsage {
   persisted: boolean;
 }
 
+/**
+ * How much site data the app keeps before it asks the user to delete some.
+ * The browser's own quota (a share of the free disk) can be lower; whichever
+ * is smaller is the real ceiling.
+ */
+export const APP_STORAGE_BUDGET = 50 * 1024 ** 3;
+
+export interface StorageBudget {
+  /** Bytes of imported site data. */
+  used: number;
+  /** The ceiling that applies right now. */
+  limit: number;
+  /** True when free disk / browser quota, not the app budget, sets `limit`. */
+  diskBound: boolean;
+}
+
+export function storageBudget(siteBytes: number, storage: StorageUsage): StorageBudget {
+  const browserRoom = storage.quota > 0 ? storage.quota - storage.usage : Infinity;
+  const byDisk = siteBytes + Math.max(0, browserRoom);
+  const limit = Math.min(APP_STORAGE_BUDGET, byDisk);
+  return { used: siteBytes, limit, diskBound: byDisk < APP_STORAGE_BUDGET };
+}
+
 export async function storageUsage(): Promise<StorageUsage> {
   const est = (await navigator.storage?.estimate?.()) ?? {};
   const persisted = (await navigator.storage?.persisted?.()) ?? false;

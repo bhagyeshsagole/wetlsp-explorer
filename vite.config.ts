@@ -3,6 +3,44 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
+import { createReadStream, statSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
+import type { Connect, Plugin } from 'vite';
+
+/**
+ * Serve `samples/` at /samples/ in dev and preview, like the desktop server
+ * does, so sample sites can be tested without packaging. Never part of the
+ * hosted web build.
+ */
+function serveSamples(): Plugin {
+  const root = fileURLToPath(new URL('./samples', import.meta.url));
+  const handler: Connect.NextHandleFunction = (req, res, next) => {
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    if (!url.pathname.startsWith('/samples/')) return next();
+    const path = resolve(root, `.${decodeURIComponent(url.pathname.slice('/samples'.length))}`);
+    if (!path.startsWith(root + sep)) {
+      res.statusCode = 403;
+      res.end();
+      return;
+    }
+    try {
+      const info = statSync(path);
+      if (!info.isFile()) throw new Error('not a file');
+      res.setHeader('Content-Length', info.size);
+      res.setHeader('Cache-Control', 'no-store');
+      if (path.endsWith('.json')) res.setHeader('Content-Type', 'application/json');
+      createReadStream(path).pipe(res);
+    } catch {
+      res.statusCode = 404;
+      res.end();
+    }
+  };
+  return {
+    name: 'wetlsp-serve-samples',
+    configureServer: (server) => void server.middlewares.use(handler),
+    configurePreviewServer: (server) => void server.middlewares.use(handler),
+  };
+}
 
 // Deployment base. Set VITE_BASE=/my-subpath/ for GitHub Pages project sites.
 const base = process.env.VITE_BASE ?? '/';
@@ -38,6 +76,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
+    serveSamples(),
     react(),
     tailwindcss(),
     VitePWA({

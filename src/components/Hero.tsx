@@ -5,7 +5,9 @@
 import { ArrowUpRight, FolderOpen, Files, Moon, Sun, WifiOff, Waves } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { useImportActions } from './DropTarget';
-import { Button, ProgressBar } from './ui';
+import { Button } from './ui';
+import { ImportProgress } from './ImportProgress';
+import { formatBytes } from '@/lib/format';
 import { useDark } from '@/views/shared';
 
 export function Hero() {
@@ -17,6 +19,8 @@ export function Hero() {
   const setView = useAppStore((s) => s.setView);
   const setHeroDismissed = useAppStore((s) => s.setHeroDismissed);
   const catalogCount = useAppStore((s) => s.catalog.length);
+  const samples = useAppStore((s) => s.samples);
+  const installSamples = useAppStore((s) => s.installSamples);
 
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto bg-[var(--bg)]">
@@ -54,25 +58,35 @@ export function Hero() {
           <div className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] p-8">
             {ingest.active ? (
               <div className="py-7">
-                <ProgressBar
-                  fraction={ingest.progress?.fraction ?? null}
-                  label={`${ingest.progress?.phase ?? 'Working'}${ingest.progress?.detail ? ` · ${ingest.progress.detail}` : ''}`}
-                />
-                <div className="mt-3 flex justify-center">
-                  <Button size="sm" variant="ghost" onClick={() => useAppStore.getState().cancelImport()}>Cancel</Button>
-                </div>
+                <ImportProgress />
+                {ingest.queue && ingest.queue.total > 1 && (
+                  <p className="mt-4 text-[12px] leading-relaxed text-[var(--text-muted)]">
+                    The first site opens as soon as it is ready; the rest keep loading.
+                  </p>
+                )}
               </div>
             ) : (
               <div>
                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-md border border-[var(--border)] text-[var(--accent)]"><FolderOpen size={23} strokeWidth={1.4} /></div>
                 <h2 className="text-[20px] font-medium tracking-[-0.025em]">Start with a site folder</h2>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-muted)]">Drag it onto this window, or choose it below.</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--text-muted)]">Drag it onto this window, or choose it below. A folder of several sites, or Drive <code className="text-[12px]">.zip</code> downloads, work too.</p>
                 <div className="mt-7 flex flex-col gap-2.5">
                   <Button className="w-full" size="lg" variant="primary" icon={<FolderOpen size={16} />} onClick={openFolder}>Upload folder</Button>
                 </div>
                 <p className="mt-4 text-center text-[12px] text-[var(--text-muted)]">
-                  <button onClick={openFiles} className="inline-flex items-center gap-1.5 hover:text-[var(--text)]"><Files size={12} />pick individual files</button>
+                  <button onClick={openFiles} className="inline-flex items-center gap-1.5 hover:text-[var(--text)]"><Files size={12} />pick files or .zip archives</button>
                 </p>
+                {samples.length > 0 && (
+                  <button
+                    onClick={() => void installSamples()}
+                    className="mt-5 w-full rounded-md border border-dashed border-[var(--border-strong)] px-3 py-2.5 text-left text-[12.5px] transition-colors hover:border-[var(--accent)] hover:bg-[var(--bg-hover)]"
+                  >
+                    <span className="font-medium text-[var(--accent)]">Load {samples.length} sample sites</span>
+                    <span className="block text-[11.5px] text-[var(--text-muted)]">
+                      {samples.map((s) => s.siteId).join(', ')} · {formatBytes(samples.reduce((n, s) => n + s.bytes, 0))}
+                    </span>
+                  </button>
+                )}
                 <p className="mt-7 border-t border-[var(--border)] pt-5 text-[11.5px] leading-relaxed text-[var(--text-muted)]">Your files stay on this device. Imported datasets are saved here for offline work.</p>
               </div>
             )}
