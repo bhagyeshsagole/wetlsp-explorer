@@ -3,40 +3,45 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
-import { createReadStream, statSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { Readable } from 'node:stream';
 import type { Connect, Plugin } from 'vite';
 
 /**
- * Serve `samples/` at /samples/ in dev and preview, like the desktop server
- * does, so sample sites can be tested without packaging. Never part of the
- * hosted web build.
+ * Dev and preview servers stream sample-site downloads from the public data
+ * release at /remote-samples/<asset>, exactly as desktop/server.mjs does, so
+ * the "Download sample sites" button can be tested without packaging.
  */
-function serveSamples(): Plugin {
-  const root = fileURLToPath(new URL('./samples', import.meta.url));
-  const handler: Connect.NextHandleFunction = (req, res, next) => {
+function proxySamples(): Plugin {
+  const release = 'https://github.com/bhagyeshsagole/wetlsp-sample-data/releases/download/v1/';
+  const handler: Connect.NextHandleFunction = async (req, res, next) => {
     const url = new URL(req.url ?? '/', 'http://localhost');
-    if (!url.pathname.startsWith('/samples/')) return next();
-    const path = resolve(root, `.${decodeURIComponent(url.pathname.slice('/samples'.length))}`);
-    if (!path.startsWith(root + sep)) {
+    if (!url.pathname.startsWith('/remote-samples/')) return next();
+    const asset = decodeURIComponent(url.pathname.slice('/remote-samples/'.length));
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(asset)) {
       res.statusCode = 403;
       res.end();
       return;
     }
+    const abort = new AbortController();
+    res.on('close', () => abort.abort());
     try {
-      const info = statSync(path);
-      if (!info.isFile()) throw new Error('not a file');
-      res.setHeader('Content-Length', info.size);
+      const upstream = await fetch(release + asset, { redirect: 'follow', signal: abort.signal });
+      if (!upstream.ok || !upstream.body) {
+        res.statusCode = upstream.status === 404 ? 404 : 502;
+        res.end();
+        return;
+      }
+      const length = upstream.headers.get('content-length');
+      if (length) res.setHeader('Content-Length', length);
       res.setHeader('Cache-Control', 'no-store');
-      if (path.endsWith('.json')) res.setHeader('Content-Type', 'application/json');
-      createReadStream(path).pipe(res);
+      Readable.fromWeb(upstream.body as import('node:stream/web').ReadableStream).pipe(res);
     } catch {
-      res.statusCode = 404;
+      res.statusCode = 502;
       res.end();
     }
   };
   return {
-    name: 'wetlsp-serve-samples',
+    name: 'wetlsp-proxy-samples',
     configureServer: (server) => void server.middlewares.use(handler),
     configurePreviewServer: (server) => void server.middlewares.use(handler),
   };
@@ -76,7 +81,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
-    serveSamples(),
+    proxySamples(),
     react(),
     tailwindcss(),
     VitePWA({

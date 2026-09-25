@@ -4,7 +4,7 @@
  */
 import { useState } from 'react';
 import clsx from 'clsx';
-import { HardDrive, PackageOpen, RotateCcw, Trash2 } from 'lucide-react';
+import { Download, HardDrive, PackageOpen, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { APP_STORAGE_BUDGET, storageBudget, type StorageBudget } from '@/lib/opfs';
 import { formatBytes } from '@/lib/format';
@@ -121,7 +121,8 @@ export function SampleSitesCard() {
         <div>
           <h3 className="text-[13.5px] font-semibold">Sample sites</h3>
           <p className="mt-0.5 text-[12px] text-[var(--text-muted)]">
-            Bundled with the app. Delete them to free space; restore them any time.
+            Downloaded from the lab’s public data release. Delete them to free space and
+            download them again any time.
           </p>
         </div>
         <PackageOpen size={14} className="mt-1 shrink-0 text-[var(--text-faint)]" />
@@ -148,7 +149,7 @@ export function SampleSitesCard() {
                   disabled={ingestActive}
                   onClick={() => void installSamples([s.siteId])}
                 >
-                  Add
+                  Download
                 </Button>
               )}
             </li>
@@ -159,11 +160,12 @@ export function SampleSitesCard() {
         <Button
           size="sm"
           className="mt-3 w-full"
-          icon={<RotateCcw size={13} />}
+          icon={<Download size={13} />}
+          variant="primary"
           disabled={ingestActive}
           onClick={() => void installSamples()}
         >
-          Restore all {missing.length} ({formatBytes(missing.reduce((n, s) => n + s.bytes, 0))})
+          Download all {missing.length} ({formatBytes(missing.reduce((n, s) => n + s.bytes, 0))})
         </Button>
       )}
     </section>
@@ -219,7 +221,7 @@ export function SpaceDialog() {
           <StorageMeter />
           <SiteStorageList highlightSamples />
           <p className="text-[11.5px] text-[var(--text-muted)]">
-            Sample sites can be restored later from Settings → Sample sites.
+            Sample sites can be downloaded again later from Settings → Sample sites.
           </p>
         </div>
         <footer className="flex items-center justify-between gap-2 border-t border-[var(--border)] px-5 py-3">

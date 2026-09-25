@@ -108,14 +108,16 @@ Always keep the original dataset folders as your permanent copy.
   remains, restart the computer or ask IT which program is using that port.
 - **Plain map while offline:** expected; imagery is online content, while the analysis is local.
 
-## Building the installer with sample sites (maintainers)
+## Updating the sample sites (maintainers)
 
-The installer ships five sample sites that load on first launch. Before
-`npm run desktop:dist`, extract them from the lab's Drive downloads:
+The app's **Download sample sites** button fetches five sites from the public
+release at [wetlsp-sample-data v1](https://github.com/bhagyeshsagole/wetlsp-sample-data/releases/tag/v1).
+The installer itself does not contain them. To publish a new set:
 
 ```sh
-npm run samples          # reads ../Actual Data/*.zip into samples/ (≈1.3 GB, git-ignored)
-npm run desktop:dist
+npm run samples           # extract ../Actual Data/*.zip into samples/ (git-ignored)
+npm run samples:publish   # upload them to the release and update src/lib/sample-index.json
 ```
 
-`SAMPLES_SRC=/path/to/zips npm run samples` reads from elsewhere.
+Then commit `src/lib/sample-index.json` and build a new installer. The app
+learns about files from that index, so the index and the release must match.

@@ -21,6 +21,22 @@ samples/
 public/duckdb/*
 !public/duckdb/.gitkeep
 
+# AI assistant files: kept on this machine, never pushed
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+AGENTS.md
+GEMINI.md
+.cursor/
+.cursorrules
+.codex/
+.aider*
+.windsurf/
+.windsurfrules
+.continue/
+.github/copilot-instructions.md
+
 # Internal development handoff and acceptance evidence
 HANDOFF.md
 prompt.md

@@ -148,6 +148,9 @@ export function CommandPalette() {
       { id: 'figure:save', title: 'Save the current figure as PNG', group: 'Export', hint: '⌘S', run: () => void runFigureAction('save') },
       { id: 'figure:copy', title: 'Copy the current figure to the clipboard', group: 'Export', hint: '⌘⇧C', run: () => void runFigureAction('copy') },
       { id: 'figure:caption', title: 'Copy a caption for the current figure', group: 'Export', run: () => void runFigureAction('caption') },
+      ...(useAppStore.getState().samples.length
+        ? [{ id: 'samples:download', title: 'Download the sample sites', group: 'Data', run: () => void useAppStore.getState().installSamples() }]
+        : []),
       { id: 'settings:storage', title: 'Manage storage and sample sites', group: 'Data', run: () => useAppStore.getState().setSettingsOpen(true) },
       { id: 'selection:clear', title: 'Clear the pixel selection', group: 'Pixel map', run: clearSelection },
       {

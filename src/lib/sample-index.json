@@ -1,0 +1,272 @@
+{
+  "version": 1,
+  "repo": "bhagyeshsagole/wetlsp-sample-data",
+  "tag": "v1",
+  "sites": [
+    {
+      "siteId": "CA-DSM",
+      "name": "Delta salt marsh",
+      "description": "Tidal high marsh on Boundary Bay, British Columbia",
+      "bytes": 270419259,
+      "files": [
+        {
+          "path": "CA-DSM-wetlsp-2021.nc",
+          "size": 8707215,
+          "asset": "CA-DSM--CA-DSM-wetlsp-2021.nc"
+        },
+        {
+          "path": "CA-DSM-wetlsp-2022.nc",
+          "size": 7564644,
+          "asset": "CA-DSM--CA-DSM-wetlsp-2022.nc"
+        },
+        {
+          "path": "CA-DSM-wetlsp-2023.nc",
+          "size": 8313556,
+          "asset": "CA-DSM--CA-DSM-wetlsp-2023.nc"
+        },
+        {
+          "path": "CA-DSM-wetlsp-2024.nc",
+          "size": 8918359,
+          "asset": "CA-DSM--CA-DSM-wetlsp-2024.nc"
+        },
+        {
+          "path": "CA_DSM_pixels_geom.parquet",
+          "size": 144855,
+          "asset": "CA-DSM--CA_DSM_pixels_geom.parquet"
+        },
+        {
+          "path": "CA_DSM_pixels_meta.parquet",
+          "size": 1581,
+          "asset": "CA-DSM--CA_DSM_pixels_meta.parquet"
+        },
+        {
+          "path": "CA_DSM_pixels_timeseries.parquet",
+          "size": 236759029,
+          "asset": "CA-DSM--CA_DSM_pixels_timeseries.parquet"
+        },
+        {
+          "path": "README_parquet.json",
+          "size": 6269,
+          "asset": "CA-DSM--README_parquet.json"
+        },
+        {
+          "path": "README_parquet.md",
+          "size": 3751,
+          "asset": "CA-DSM--README_parquet.md"
+        }
+      ]
+    },
+    {
+      "siteId": "FR-LGt",
+      "name": "La Guette",
+      "description": "Acidic fen in the Sologne, France, disturbed and invaded by purple moor-grass",
+      "bytes": 286422878,
+      "files": [
+        {
+          "path": "FR-LGt-wetlsp-2021.nc",
+          "size": 8846047,
+          "asset": "FR-LGt--FR-LGt-wetlsp-2021.nc"
+        },
+        {
+          "path": "FR-LGt-wetlsp-2022.nc",
+          "size": 9781518,
+          "asset": "FR-LGt--FR-LGt-wetlsp-2022.nc"
+        },
+        {
+          "path": "FR-LGt-wetlsp-2023.nc",
+          "size": 9604624,
+          "asset": "FR-LGt--FR-LGt-wetlsp-2023.nc"
+        },
+        {
+          "path": "FR-LGt-wetlsp-2024.nc",
+          "size": 11048407,
+          "asset": "FR-LGt--FR-LGt-wetlsp-2024.nc"
+        },
+        {
+          "path": "FR_LGt_pixels_geom.parquet",
+          "size": 146689,
+          "asset": "FR-LGt--FR_LGt_pixels_geom.parquet"
+        },
+        {
+          "path": "FR_LGt_pixels_meta.parquet",
+          "size": 1602,
+          "asset": "FR-LGt--FR_LGt_pixels_meta.parquet"
+        },
+        {
+          "path": "FR_LGt_pixels_timeseries.parquet",
+          "size": 246983971,
+          "asset": "FR-LGt--FR_LGt_pixels_timeseries.parquet"
+        },
+        {
+          "path": "README_parquet.json",
+          "size": 6269,
+          "asset": "FR-LGt--README_parquet.json"
+        },
+        {
+          "path": "README_parquet.md",
+          "size": 3751,
+          "asset": "FR-LGt--README_parquet.md"
+        }
+      ]
+    },
+    {
+      "siteId": "BR-SM1",
+      "name": "Cachoeira do Sul",
+      "description": "Flooded rice paddy, Rio Grande do Sul, Brazil",
+      "bytes": 300098267,
+      "files": [
+        {
+          "path": "BR-SM1-wetlsp-2021.nc",
+          "size": 14098676,
+          "asset": "BR-SM1--BR-SM1-wetlsp-2021.nc"
+        },
+        {
+          "path": "BR-SM1-wetlsp-2022.nc",
+          "size": 6978917,
+          "asset": "BR-SM1--BR-SM1-wetlsp-2022.nc"
+        },
+        {
+          "path": "BR-SM1-wetlsp-2023.nc",
+          "size": 3527623,
+          "asset": "BR-SM1--BR-SM1-wetlsp-2023.nc"
+        },
+        {
+          "path": "BR-SM1-wetlsp-2024.nc",
+          "size": 11886339,
+          "asset": "BR-SM1--BR-SM1-wetlsp-2024.nc"
+        },
+        {
+          "path": "BR_SM1_pixels_geom.parquet",
+          "size": 147410,
+          "asset": "BR-SM1--BR_SM1_pixels_geom.parquet"
+        },
+        {
+          "path": "BR_SM1_pixels_meta.parquet",
+          "size": 1507,
+          "asset": "BR-SM1--BR_SM1_pixels_meta.parquet"
+        },
+        {
+          "path": "BR_SM1_pixels_timeseries.parquet",
+          "size": 263447775,
+          "asset": "BR-SM1--BR_SM1_pixels_timeseries.parquet"
+        },
+        {
+          "path": "README_parquet.json",
+          "size": 6269,
+          "asset": "BR-SM1--README_parquet.json"
+        },
+        {
+          "path": "README_parquet.md",
+          "size": 3751,
+          "asset": "BR-SM1--README_parquet.md"
+        }
+      ]
+    },
+    {
+      "siteId": "US-BZF",
+      "name": "Bonanza Creek fen",
+      "description": "Rich fen in interior Alaska",
+      "bytes": 259914742,
+      "files": [
+        {
+          "path": "README_parquet.json",
+          "size": 6269,
+          "asset": "US-BZF--README_parquet.json"
+        },
+        {
+          "path": "README_parquet.md",
+          "size": 3751,
+          "asset": "US-BZF--README_parquet.md"
+        },
+        {
+          "path": "US-BZF-wetlsp-2021.nc",
+          "size": 4983164,
+          "asset": "US-BZF--US-BZF-wetlsp-2021.nc"
+        },
+        {
+          "path": "US-BZF-wetlsp-2022.nc",
+          "size": 5379574,
+          "asset": "US-BZF--US-BZF-wetlsp-2022.nc"
+        },
+        {
+          "path": "US-BZF-wetlsp-2023.nc",
+          "size": 5138961,
+          "asset": "US-BZF--US-BZF-wetlsp-2023.nc"
+        },
+        {
+          "path": "US-BZF-wetlsp-2024.nc",
+          "size": 1927152,
+          "asset": "US-BZF--US-BZF-wetlsp-2024.nc"
+        },
+        {
+          "path": "US_BZF_pixels_geom.parquet",
+          "size": 299911,
+          "asset": "US-BZF--US_BZF_pixels_geom.parquet"
+        },
+        {
+          "path": "US_BZF_pixels_meta.parquet",
+          "size": 1524,
+          "asset": "US-BZF--US_BZF_pixels_meta.parquet"
+        },
+        {
+          "path": "US_BZF_pixels_timeseries.parquet",
+          "size": 242174436,
+          "asset": "US-BZF--US_BZF_pixels_timeseries.parquet"
+        }
+      ]
+    },
+    {
+      "siteId": "CZ-Wet",
+      "name": "Třeboň wet meadow",
+      "description": "Wet sedge meadow, Czechia",
+      "bytes": 306694831,
+      "files": [
+        {
+          "path": "CZ-Wet-wetlsp-2021.nc",
+          "size": 10165840,
+          "asset": "CZ-Wet--CZ-Wet-wetlsp-2021.nc"
+        },
+        {
+          "path": "CZ-Wet-wetlsp-2022.nc",
+          "size": 10371248,
+          "asset": "CZ-Wet--CZ-Wet-wetlsp-2022.nc"
+        },
+        {
+          "path": "CZ-Wet-wetlsp-2023.nc",
+          "size": 10870429,
+          "asset": "CZ-Wet--CZ-Wet-wetlsp-2023.nc"
+        },
+        {
+          "path": "CZ-Wet-wetlsp-2024.nc",
+          "size": 10390672,
+          "asset": "CZ-Wet--CZ-Wet-wetlsp-2024.nc"
+        },
+        {
+          "path": "CZ_Wet_pixels_geom.parquet",
+          "size": 143036,
+          "asset": "CZ-Wet--CZ_Wet_pixels_geom.parquet"
+        },
+        {
+          "path": "CZ_Wet_pixels_meta.parquet",
+          "size": 1674,
+          "asset": "CZ-Wet--CZ_Wet_pixels_meta.parquet"
+        },
+        {
+          "path": "CZ_Wet_pixels_timeseries.parquet",
+          "size": 264741912,
+          "asset": "CZ-Wet--CZ_Wet_pixels_timeseries.parquet"
+        },
+        {
+          "path": "README_parquet.json",
+          "size": 6269,
+          "asset": "CZ-Wet--README_parquet.json"
+        },
+        {
+          "path": "README_parquet.md",
+          "size": 3751,
+          "asset": "CZ-Wet--README_parquet.md"
+        }
+      ]
+    }
+  ]
+}
