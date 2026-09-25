@@ -17,6 +17,7 @@ export function ImportProgress({ inline = false }: { inline?: boolean }) {
         ? (queue.index + progress.fraction) / queue.total
         : progress.fraction;
   const label = [
+    fraction !== null ? `${Math.round(fraction * 100)}%` : null,
     queue ? `Site ${queue.index + 1} of ${queue.total} · ${queue.label}` : null,
     progress?.phase ?? 'Importing',
     progress?.detail ? progress.detail.split('/').pop() : null,
