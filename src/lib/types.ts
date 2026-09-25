@@ -45,6 +45,8 @@ export interface SiteManifest {
   warnings: string[];
   totalBytes: number;
   importedAt: number;
+  /** `sample` for the sites bundled with the app; absent for the user's own imports. */
+  origin?: 'sample' | 'user';
 }
 
 /** Key/value pairs read from `pixels_meta`. */

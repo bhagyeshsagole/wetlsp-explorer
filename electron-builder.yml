@@ -10,6 +10,12 @@ files:
   - desktop/smoke.mjs
   - package.json
   - '!node_modules/**/*'
+# Sample sites loaded on first launch (`npm run samples` builds the folder).
+# Kept outside the asar so the local server streams them straight from disk.
+extraResources:
+  - from: samples
+    to: samples
+    filter: ['**/*']
 asar: true
 npmRebuild: false
 # Restores a valid ad-hoc signature that electron-builder's repacking invalidates.

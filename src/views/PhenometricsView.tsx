@@ -6,7 +6,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BitmapLayer } from '@deck.gl/layers';
-import { Download, Layers, Maximize2, Plus, X } from 'lucide-react';
+import { Layers, Maximize2, Plus, X } from 'lucide-react';
+import { FigureMenu } from '@/components/FigureMenu';
+import { canvasToBlob, copyImage } from '@/lib/figure';
 import { MapCanvas, type MapCanvasHandle } from '@/components/MapCanvas';
 import {
   IDENTITY_VIEW, RasterFigure, type FigureView, type Probe, type RasterFigureHandle,
@@ -20,7 +22,7 @@ import { makeColorScale, rampToCssGradient, type ColorScale } from '@/lib/colors
 import { rasterDomain, rasterToCanvas } from '@/lib/raster';
 import { LAYER_ORDER, isTimingLayer, layerInfo, phenometricScaleType } from '@/lib/layers';
 import { doyToDateLabel, formatCount, formatValue } from '@/lib/format';
-import { downloadCanvasPng, exportBackground, timestampedName } from '@/lib/export';
+import { downloadBlob, exportBackground, figureCard, timestampedName } from '@/lib/export';
 import type { NetcdfInfo, RasterSlice } from '@/lib/types';
 
 type Mode = 'figure' | 'map' | 'relief';
@@ -130,31 +132,75 @@ export function PhenometricsView() {
     );
   }, [layer, domains, rasters.data, ph.syncScale]);
 
-  const exportPng = async () => {
-    const name = timestampedName(
+  const catalogIndex = useAppStore((s) => s.catalogIndex);
+
+  /** The on-screen panels as one titled, labelled, legend-carrying image. */
+  const renderFigure = (): HTMLCanvasElement => {
+    const data = rasters.data ?? [];
+    const lyr = displayedLayer ?? 'layer';
+    const info = layerInfo(lyr);
+    const pairs: Array<{ canvas: HTMLCanvasElement; label: string }> = [];
+    if (mode === 'relief') {
+      const canvas = reliefRef.current?.canvas();
+      if (!canvas) throw new Error('The 3D view is not ready yet.');
+      pairs.push({ canvas, label: data[0] ? `${data[0].siteId} ${data[0].year}` : '' });
+    } else {
+      if (mode === 'map') mapRefs.current.forEach((r) => r?.repaint());
+      const refs = mode === 'map' ? mapRefs.current : figureRefs.current;
+      data.forEach((p, i) => {
+        const canvas = refs[i]?.canvas();
+        if (canvas) pairs.push({ canvas, label: `${p.siteId} ${p.year}` });
+      });
+    }
+    if (pairs.length === 0) throw new Error('There is nothing on screen to export yet.');
+
+    const siteIds = [...new Set(data.map((p) => p.siteId))];
+    const name = siteIds.length === 1 ? catalogIndex.get(siteIds[0])?.site_name : undefined;
+    const pooled = data[0]?.slice && data[0].slice.downsample > 1 ? ` · ${data[0].slice.downsample}× pooled` : '';
+    const oneScale = mode === 'relief' || pairs.length === 1 || ph.syncScale;
+    const scale = scales?.[0];
+    return figureCard(
+      pairs.map((p) => p.canvas),
+      {
+        title: `${lyr} · ${data.map((p) => `${p.siteId} ${p.year}`).join(', ')}`,
+        subtitle: `${info.description}${name ? ` · ${name}` : ''}${pooled}${!oneScale ? ' · each panel has its own colour scale' : ''}`,
+        panelLabels: pairs.length > 1 ? pairs.map((p) => p.label) : undefined,
+        cols: mode === 'relief' ? 1 : Math.min(2, pairs.length),
+        background: exportBackground(),
+        legend:
+          oneScale && scale
+            ? {
+                hex: (v) => scale.hex(v),
+                domain: scale.domain,
+                ticks: scale.ticks(5),
+                units: info.units && info.units !== 'unitless' ? info.units : undefined,
+                format: (v) => formatValue(v, 3),
+              }
+            : undefined,
+      },
+    );
+  };
+
+  const exportName = () =>
+    timestampedName(
       ['wetlsp', displayedLayer ?? 'layer', ...(rasters.data ?? []).map((p) => `${p.siteId}-${p.year}`)],
       'png',
     );
-    try {
-      if (mode === 'relief') {
-        const canvas = reliefRef.current?.canvas();
-        if (!canvas) throw new Error('The 3D view is not ready yet.');
-        await downloadCanvasPng(flatten([canvas], 1), name);
-        return;
-      }
-      const canvases = (mode === 'map' ? mapRefs.current : figureRefs.current)
-        .map((r) => r?.canvas() ?? null)
-        .filter((c): c is HTMLCanvasElement => Boolean(c));
-      if (mode === 'map') mapRefs.current.forEach((r) => r?.repaint());
-      if (canvases.length === 0) throw new Error('There is nothing on screen to export yet.');
-      await downloadCanvasPng(flatten(canvases, Math.min(2, canvases.length)), name);
-    } catch (err) {
-      useAppStore.getState().toast({
-        kind: 'error',
-        title: 'PNG export failed',
-        detail: err instanceof Error ? err.message : String(err),
-      });
-    }
+
+  const caption = (): string | null => {
+    const data = (rasters.data ?? []).filter((p) => p.slice);
+    if (!displayedLayer || data.length === 0) return null;
+    const info = layerInfo(displayedLayer);
+    const where = data.map((p) => {
+      const n = catalogIndex.get(p.siteId)?.site_name;
+      return `${p.siteId}${n ? ` (${n})` : ''} ${p.year}`;
+    });
+    const pooled = data[0].slice!.downsample > 1 ? `, mean-pooled ${data[0].slice!.downsample}× for display` : '';
+    return (
+      `WetLSP ${displayedLayer} — ${info.description.replace(/\.$/, '')} — for ${where.join(', ')}` +
+      `${data.length > 1 ? (ph.syncScale ? ', on a shared colour scale' : ', each on its own colour scale') : ''}${pooled}. ` +
+      `Source: WetLSP NetCDF ${[...new Set(data.map((p) => p.year))].join(', ')}.`
+    );
   };
 
   if (!site) {
@@ -243,9 +289,14 @@ export function PhenometricsView() {
               Reset zoom
             </Button>
           )}
-          <Button size="sm" icon={<Download size={13} />} onClick={exportPng}>
-            PNG
-          </Button>
+          <FigureMenu
+            disabled={renderedPanels === 0}
+            actions={{
+              save: async () => downloadBlob(await canvasToBlob(renderFigure()), exportName()),
+              copy: () => copyImage(canvasToBlob(renderFigure())),
+              caption,
+            }}
+          />
         </div>
       </div>
 
@@ -518,23 +569,6 @@ function tooltipHtml(layer: string, year: number, value: number, col: number, ro
   if (isTimingLayer(layer)) lines.push(doyToDateLabel(value, year));
   lines.push(`<span style="opacity:.7">cell ${col}, ${row}</span>`);
   return lines.join('<br/>');
-}
-
-/** Tile panel canvases into one image for export. */
-function flatten(canvases: HTMLCanvasElement[], cols: number): HTMLCanvasElement {
-  const rows = Math.ceil(canvases.length / cols);
-  const w = Math.max(...canvases.map((c) => c.width));
-  const h = Math.max(...canvases.map((c) => c.height));
-  const out = document.createElement('canvas');
-  out.width = w * cols;
-  out.height = h * rows;
-  const ctx = out.getContext('2d')!;
-  ctx.fillStyle = exportBackground();
-  ctx.fillRect(0, 0, out.width, out.height);
-  canvases.forEach((c, i) => {
-    ctx.drawImage(c, (i % cols) * w, Math.floor(i / cols) * h, w, h);
-  });
-  return out;
 }
 
 /* ------------------------------------------------------------- inspector */

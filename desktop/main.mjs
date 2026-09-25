@@ -18,7 +18,11 @@ else {
     window?.show(); window?.focus();
   });
   app.whenReady().then(async () => {
-    server = await startServer(join(app.getAppPath(), 'dist'));
+    // Packaged: extraResources beside the asar. From source: WebApp/samples.
+    const samples = app.isPackaged
+      ? join(process.resourcesPath, 'samples')
+      : join(app.getAppPath(), 'samples');
+    server = await startServer(join(app.getAppPath(), 'dist'), undefined, samples);
     // Scientific analysis needs no camera, microphone, location or notifications.
     session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
       callback(contents?.getURL().startsWith(ORIGIN + '/') && ['persistent-storage', 'fileSystem'].includes(permission));

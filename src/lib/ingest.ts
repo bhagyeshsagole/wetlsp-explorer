@@ -1,9 +1,10 @@
 /**
  * Turning whatever the user dropped in into a persisted, queryable site.
  *
- * Handles three input routes — drag-and-drop of a folder, `webkitdirectory`
- * pickers and plain multi-file selection — and normalises all of them into the
- * same `{ path, file }` list before detection runs.
+ * Handles every input route — drag-and-drop of a folder, `webkitdirectory`
+ * pickers, plain multi-file selection, `.zip` archives and the sample sites
+ * bundled with the desktop app — and normalises all of them into the same
+ * `{ path, size, open }` list before detection runs.
  */
 import {
   basename,
@@ -13,13 +14,64 @@ import {
   stripCommonRoot,
   type InputFile,
 } from './detect';
-import { saveManifest, saveSiteMeta } from './idb';
-import { requestPersistence, writeSiteFile } from './opfs';
+import { loadManifest, saveManifest, saveSiteMeta } from './idb';
+import { deleteSite, requestPersistence, writeSiteFile } from './opfs';
+import { isZipPath, listZip, openZipMember } from './zip';
 import type { ProgressEvent, SiteManifest, SiteMeta } from './types';
 
 export interface IngestEntry {
   path: string;
-  file: File;
+  size: number;
+  /** A real file on disk. Archive members and bundled samples stream instead. */
+  file?: File;
+  open?: () => Promise<ReadableStream<Uint8Array>>;
+}
+
+export function fileEntry(path: string, file: File): IngestEntry {
+  return { path, size: file.size, file };
+}
+
+function openEntry(entry: IngestEntry): Promise<ReadableStream<Uint8Array>> {
+  if (entry.file) return Promise.resolve(entry.file.stream() as ReadableStream<Uint8Array>);
+  if (entry.open) return entry.open();
+  throw new Error(`"${entry.path}" has no readable content.`);
+}
+
+/** A real `File` for the entry; archive members are small here (pixels_meta). */
+async function entryAsFile(entry: IngestEntry): Promise<File> {
+  if (entry.file) return entry.file;
+  const blob = await new Response(await openEntry(entry)).blob();
+  return new File([blob], basename(entry.path));
+}
+
+/**
+ * Replace every `.zip` in the list by its members, as if the archive had been
+ * extracted next to it: `Data/CA-DSM-1-001.zip` -> `Data/CA-DSM-1-001.zip/CA-DSM/…`.
+ */
+export async function expandArchives(entries: IngestEntry[]): Promise<IngestEntry[]> {
+  const out: IngestEntry[] = [];
+  for (const entry of entries) {
+    if (!entry.file || !isZipPath(entry.path)) {
+      out.push(entry);
+      continue;
+    }
+    const archive = entry.file;
+    let members;
+    try {
+      members = await listZip(archive);
+    } catch (err) {
+      throw new Error(`${basename(entry.path)}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    for (const m of members) {
+      if (m.path.split('/').some((seg) => seg === '__MACOSX' || seg === '..')) continue;
+      out.push({
+        path: `${entry.path}/${m.path}`,
+        size: m.size,
+        open: () => openZipMember(archive, m),
+      });
+    }
+  }
+  return out;
 }
 
 export interface IngestResult {
@@ -33,16 +85,22 @@ export interface IngestOptions {
   folderHint?: string;
   onProgress?: (p: ProgressEvent) => void;
   signal?: AbortSignal;
+  /** Marks bundled sample sites so they can be told apart and restored. */
+  origin?: SiteManifest['origin'];
+  /**
+   * Called once the site id and byte count are known, before anything is
+   * written. Reject to stop the import (the caller asks the user to make room).
+   */
+  ensureSpace?: (siteId: string, bytes: number) => Promise<void>;
 }
 
 /* --------------------------------------------------------- input routes */
 
 /** Files from `<input webkitdirectory>` or a plain multi-file `<input>`. */
 export function entriesFromFileList(list: FileList | File[]): IngestEntry[] {
-  return Array.from(list).map((file) => ({
-    path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
-    file,
-  }));
+  return Array.from(list).map((file) =>
+    fileEntry((file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name, file),
+  );
 }
 
 /** Recursively walk a legacy `FileSystemEntry` tree from a drop. */
@@ -51,7 +109,7 @@ async function walkEntry(entry: FileSystemEntry, prefix: string): Promise<Ingest
     const file = await new Promise<File>((resolve, reject) =>
       (entry as FileSystemFileEntry).file(resolve, reject),
     );
-    return [{ path: `${prefix}${entry.name}`, file }];
+    return [fileEntry(`${prefix}${entry.name}`, file)];
   }
   const reader = (entry as FileSystemDirectoryEntry).createReader();
   const children: FileSystemEntry[] = [];
@@ -76,7 +134,7 @@ async function walkHandle(
 ): Promise<IngestEntry[]> {
   if (handle.kind === 'file') {
     const file = await (handle as FileSystemFileHandle).getFile();
-    return [{ path: `${prefix}${handle.name}`, file }];
+    return [fileEntry(`${prefix}${handle.name}`, file)];
   }
   const out: IngestEntry[] = [];
   // @ts-expect-error - values() exists at runtime on directory handles.
@@ -148,7 +206,7 @@ async function copyToOpfs(
 ): Promise<number> {
   // Small files go through a single write; big ones stream so the whole parquet
   // is never resident in JS memory at once.
-  if (entry.file.size < 8 * 1024 * 1024) {
+  if (entry.file && entry.file.size < 8 * 1024 * 1024) {
     const size = await writeSiteFile(siteId, entry.path, entry.file);
     onBytes(size);
     return size;
@@ -161,11 +219,7 @@ async function copyToOpfs(
       controller.enqueue(chunk);
     },
   });
-  await writeSiteFile(
-    siteId,
-    entry.path,
-    entry.file.stream().pipeThrough(counter) as ReadableStream<Uint8Array>,
-  );
+  await writeSiteFile(siteId, entry.path, (await openEntry(entry)).pipeThrough(counter));
   return written;
 }
 
@@ -187,7 +241,7 @@ async function peekMeta(parts: IngestEntry[]): Promise<SiteMeta> {
       const name = `peek_meta_${Date.now()}_${i}.parquet`;
       await db.registerFileHandle(
         name,
-        part.file,
+        await entryAsFile(part),
         duckdb.DuckDBDataProtocol.BROWSER_FILEREADER,
         true,
       );
@@ -239,15 +293,15 @@ export async function ingestEntries(
 ): Promise<IngestResult> {
   // Drop OS cruft (`.DS_Store`, `._*`) before anything else looks at the list.
   const kept = entries.filter((e) => !basename(e.path).startsWith('.'));
-  const input: InputFile[] = kept.map((e) => ({ path: e.path, size: e.file.size }));
+  const input: InputFile[] = kept.map((e) => ({ path: e.path, size: e.size }));
 
   // Strip the shared folder prefix once, here, so the paths used for storage are
   // exactly the paths detection classified.
   const rel = stripCommonRoot(input).map((f) => f.path);
-  const files = kept.map((e, i) => ({ path: rel[i], file: e.file }));
+  const files: IngestEntry[] = kept.map((e, i) => ({ ...e, path: rel[i] }));
 
   const detection = detectDataset(
-    files.map((f) => ({ path: f.path, size: f.file.size })),
+    files.map((f) => ({ path: f.path, size: f.size })),
     opts.folderHint,
   );
 
@@ -264,7 +318,8 @@ export async function ingestEntries(
     .map((p) => byPath.get(p.path))
     .filter((e): e is IngestEntry => Boolean(e));
 
-  opts.onProgress?.({ phase: 'Identifying site', fraction: null });
+  const progress = throttleProgress(opts.onProgress);
+  progress({ phase: 'Identifying site', fraction: null });
   try {
     meta = await peekMeta(metaParts);
     if (meta.site_id && meta.site_id.trim()) siteId = meta.site_id.trim();
@@ -275,33 +330,76 @@ export async function ingestEntries(
     );
   }
 
+  // Only the files the manifest references are copied; stray downloads and
+  // unrelated files in a parent folder are never written to storage.
+  const keep = new Set(
+    [
+      ...(detection.geom?.parts ?? []),
+      ...(detection.meta?.parts ?? []),
+      ...(detection.timeseries?.parts ?? []),
+      ...detection.netcdf,
+      ...detection.readme,
+    ].map((f) => f.path),
+  );
+  const toCopy = files.filter((f) => keep.has(f.path));
+  const total = toCopy.reduce((s, e) => s + e.size, 0);
+
+  await opts.ensureSpace?.(siteId, total);
   await requestPersistence();
 
-  const total = files.reduce((s, e) => s + e.file.size, 0);
+  const isNew = !(await loadManifest(siteId));
   let done = 0;
   let bytesWritten = 0;
-  for (const entry of files) {
-    if (opts.signal?.aborted) throw new Error('Import cancelled.');
-    opts.onProgress?.({
-      phase: 'Copying into offline storage',
-      fraction: total > 0 ? done / total : null,
-      detail: entry.path,
-    });
-    bytesWritten += await copyToOpfs(siteId, entry, (n) => {
-      done += n;
-      opts.onProgress?.({
+  try {
+    for (const entry of toCopy) {
+      if (opts.signal?.aborted) throw new Error('Import cancelled.');
+      progress({
         phase: 'Copying into offline storage',
-        fraction: total > 0 ? Math.min(1, done / total) : null,
+        fraction: total > 0 ? done / total : null,
         detail: entry.path,
       });
-    });
+      bytesWritten += await copyToOpfs(siteId, entry, (n) => {
+        done += n;
+        progress({
+          phase: 'Copying into offline storage',
+          fraction: total > 0 ? Math.min(1, done / total) : null,
+          detail: entry.path,
+        });
+      });
+    }
+  } catch (err) {
+    // A half-copied new site would be invisible yet still use disk space.
+    if (isNew) await deleteSite(siteId).catch(() => undefined);
+    throw err;
   }
 
   const manifest = manifestFromDetection({ ...detection, siteId });
   manifest.totalBytes = bytesWritten;
+  if (opts.origin) manifest.origin = opts.origin;
   await saveManifest(manifest);
   await saveSiteMeta(siteId, meta);
 
-  opts.onProgress?.({ phase: 'Ready', fraction: 1 });
+  progress({ phase: 'Ready', fraction: 1 }, true);
   return { manifest, meta, bytesWritten };
+}
+
+/**
+ * A 300 MB copy reports thousands of chunks; re-rendering the app for each one
+ * is what made big imports feel frozen. Forward at most ~8 updates a second,
+ * plus every change of phase or file.
+ */
+function throttleProgress(
+  fn: ((p: ProgressEvent) => void) | undefined,
+): (p: ProgressEvent, force?: boolean) => void {
+  let last = 0;
+  let lastKey = '';
+  return (p, force = false) => {
+    if (!fn) return;
+    const key = `${p.phase}|${p.detail ?? ''}`;
+    const now = performance.now();
+    if (!force && key === lastKey && now - last < 120) return;
+    last = now;
+    lastKey = key;
+    fn(p);
+  };
 }

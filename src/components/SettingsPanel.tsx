@@ -6,7 +6,8 @@ import { useAppStore, type ThemeMode } from '@/store/useAppStore';
 import { BASEMAP_OPTIONS } from '@/lib/basemaps';
 import { clearCache, requestPersistence } from '@/lib/opfs';
 import { warmEngine } from '@/engine/duckdb';
-import { formatBytes, pluralise } from '@/lib/format';
+import { pluralise } from '@/lib/format';
+import { SampleSitesCard, SiteStorageList, StorageMeter } from './StoragePanel';
 import { clearCatalogOverride, loadCatalog, setCatalogOverride } from '@/lib/catalog';
 
 export function SettingsPanel({ onClose }: { onClose: () => void }) {
@@ -160,22 +161,14 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
             </div>
           </Card>
 
-          <Card title="Storage" actions={<HardDrive size={14} className="text-[var(--text-faint)]" />}>
-            <div className="space-y-2">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-sunken)]">
-                <div
-                  className="h-full rounded-full bg-[var(--accent)]"
-                  style={{
-                    width: storage.quota
-                      ? `${Math.min(100, (storage.usage / storage.quota) * 100).toFixed(1)}%`
-                      : '0%',
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[12px] text-[var(--text-muted)]">
-                <span>{formatBytes(storage.usage)} used</span>
-                <span>{storage.quota ? `${formatBytes(storage.quota)} available` : ''}</span>
-              </div>
+          <Card
+            title="Storage"
+            subtitle="Up to 50 GB of site data. When it is full, imports ask you to delete a site first."
+            actions={<HardDrive size={14} className="text-[var(--text-faint)]" />}
+          >
+            <div className="space-y-3">
+              <StorageMeter />
+              <SiteStorageList />
               <Divider />
               <button
                 onClick={async () => {
@@ -193,6 +186,8 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               </button>
             </div>
           </Card>
+
+          <SampleSitesCard />
 
           <Card
             title="Site catalog"

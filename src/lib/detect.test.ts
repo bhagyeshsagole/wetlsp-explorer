@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cleanFolderHint,
+  splitSites,
   detectDataset,
   isIngestable,
   parseNetcdfName,
@@ -168,5 +170,51 @@ describe('detectDataset — partial and messy input', () => {
     expect(d.geom?.kind).toBe('directory');
     expect(d.geom?.parts).toHaveLength(2);
     expect(d.layout).toBe('mixed');
+  });
+});
+
+describe('splitSites', () => {
+  it('leaves a single-site folder untouched', () => {
+    const groups = splitSites(singleFileSite);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].files).toBe(singleFileSite);
+  });
+
+  it('splits a parent folder into one group per site, rebased onto each site folder', () => {
+    const parent = [
+      ...singleFileSite.map((f) => ({ ...f, path: `data/${f.path}` })),
+      ...batchedSite.map((f) => ({ ...f, path: `data/${f.path}` })),
+      { path: 'data/notes.txt', size: 10 },
+    ];
+    const groups = splitSites(parent);
+    expect(groups.map((g) => g.hint)).toEqual(['CA-DB2', 'US-Myb']);
+    const myb = groups[1].files.map((f) => f.path);
+    expect(myb).toContain('pixels_timeseries_ds/ts_batch_001.parquet');
+    expect(myb).toContain('US-Myb-wetlsp-2022.nc');
+    expect(groups[0].files.map((f) => f.path)).toContain('README_parquet.md');
+    expect(groups.flatMap((g) => g.files).some((f) => f.path.endsWith('notes.txt'))).toBe(false);
+    for (const g of groups) expect(isIngestable(detectDataset(g.files, g.hint))).toBe(true);
+  });
+
+  it('merges one site split across two Drive zip parts', () => {
+    const parts = [
+      { path: 'CA-DSM-20260925T181322Z-1-001.zip/CA-DSM/CA_DSM_pixels_geom.parquet', size: 1 },
+      { path: 'CA-DSM-20260925T181322Z-1-001.zip/CA-DSM/CA_DSM_pixels_meta.parquet', size: 1 },
+      { path: 'CA-DSM-20260925T181322Z-1-002.zip/CA-DSM/CA-DSM-wetlsp-2022.nc', size: 1 },
+      { path: 'FR-LGt-20260925T181331Z-1-001.zip/FR-LGt/FR-LGt-wetlsp-2021.nc', size: 1 },
+    ];
+    const groups = splitSites(parts);
+    expect(groups).toHaveLength(2);
+    const dsm = groups.find((g) => g.hint === 'CA-DSM')!;
+    expect(dsm.files.map((f) => f.path).sort()).toEqual([
+      'CA-DSM-wetlsp-2022.nc',
+      'CA_DSM_pixels_geom.parquet',
+      'CA_DSM_pixels_meta.parquet',
+    ]);
+  });
+
+  it('cleans Drive archive names into folder hints', () => {
+    expect(cleanFolderHint('CA-DSM-20260925T181322Z-1-001.zip')).toBe('CA-DSM');
+    expect(cleanFolderHint('US-Myb')).toBe('US-Myb');
   });
 });
