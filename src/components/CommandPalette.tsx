@@ -6,6 +6,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { VIEWS } from './TopBar';
 import { useImportActions } from './DropTarget';
 import { Kbd } from './ui';
+import { runFigureAction } from '@/lib/figure';
 
 interface Command {
   id: string;
@@ -129,12 +130,25 @@ export function CommandPalette() {
               : [...ts.series, 'raw'],
           }),
       },
+      { id: 'chart:line', title: 'Time series: line chart', group: 'Time series', run: () => updateTs({ chart: 'line' }) },
+      { id: 'chart:years', title: 'Time series: compare years', group: 'Time series', run: () => updateTs({ chart: 'years' }) },
+      { id: 'chart:3d', title: 'Time series: 3D ribbon', group: 'Time series', run: () => updateTs({ chart: '3d' }) },
       {
-        id: 'toggle:3d',
-        title: ts.mode3d ? 'Time series: back to the 2D chart' : 'Time series: 3D ribbon',
+        id: 'toggle:pixels',
+        title: ts.showPixels ? 'Hide individual pixel lines' : 'Show individual pixel lines',
         group: 'Time series',
-        run: () => updateTs({ mode3d: !ts.mode3d }),
+        run: () => updateTs({ showPixels: !ts.showPixels }),
       },
+      {
+        id: 'toggle:iqr',
+        title: ts.showIqr ? 'Hide the IQR band' : 'Show the IQR band',
+        group: 'Time series',
+        run: () => updateTs({ showIqr: !ts.showIqr }),
+      },
+      { id: 'figure:save', title: 'Save the current figure as PNG', group: 'Export', hint: '⌘S', run: () => void runFigureAction('save') },
+      { id: 'figure:copy', title: 'Copy the current figure to the clipboard', group: 'Export', hint: '⌘⇧C', run: () => void runFigureAction('copy') },
+      { id: 'figure:caption', title: 'Copy a caption for the current figure', group: 'Export', run: () => void runFigureAction('caption') },
+      { id: 'settings:storage', title: 'Manage storage and sample sites', group: 'Data', run: () => useAppStore.getState().setSettingsOpen(true) },
       { id: 'selection:clear', title: 'Clear the pixel selection', group: 'Pixel map', run: clearSelection },
       {
         id: 'theme',

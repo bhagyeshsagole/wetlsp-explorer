@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import clsx from 'clsx';
 import { useAppStore, watchOnline, watchSystemTheme } from '@/store/useAppStore';
 import { LeftRail } from '@/components/LeftRail';
@@ -10,6 +10,9 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { DropOverlay, useGlobalDrop } from '@/components/DropTarget';
 import { ProgressBar } from '@/components/ui';
+import { SpaceDialog } from '@/components/StoragePanel';
+import { runFigureAction } from '@/lib/figure';
+import { ImportProgress } from '@/components/ImportProgress';
 import { OverviewInspector, OverviewView } from '@/views/OverviewView';
 import { TimeSeriesInspector, TimeSeriesView } from '@/views/TimeSeriesView';
 import { PixelMapInspector, PixelMapView } from '@/views/PixelMapView';
@@ -42,7 +45,8 @@ export default function App() {
   const heroDismissed = useAppStore((s) => s.heroDismissed);
   const inspectorCollapsed = useAppStore((s) => s.inspectorCollapsed);
   const ingest = useAppStore((s) => s.ingest);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsOpen = useAppStore((s) => s.settingsOpen);
+  const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
   const { dragging } = useGlobalDrop();
 
   useEffect(() => {
@@ -64,6 +68,16 @@ export default function App() {
         setPaletteOpen(!useAppStore.getState().paletteOpen);
         return;
       }
+      if (meta && !e.shiftKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        void runFigureAction('save');
+        return;
+      }
+      if (meta && e.shiftKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        void runFigureAction('copy');
+        return;
+      }
       if (meta && /^[1-5]$/.test(e.key)) {
         e.preventDefault();
         setView(VIEWS[Number(e.key) - 1].id);
@@ -76,7 +90,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [setPaletteOpen, setView]);
+  }, [setPaletteOpen, setView, setSettingsOpen]);
 
   const showHero = booted && siteCount === 0 && !heroDismissed;
   const Canvas = CANVASES[view];
@@ -93,12 +107,7 @@ export default function App() {
             <TopBar />
             {ingest.active && (
               <div className="border-b border-[var(--border)] bg-[var(--bg-elevated)] px-4 py-2">
-                <ProgressBar
-                  fraction={ingest.progress?.fraction ?? null}
-                  label={`${ingest.progress?.phase ?? 'Importing'}${
-                    ingest.progress?.detail ? ` · ${ingest.progress.detail}` : ''
-                  }`}
-                />
+                <ImportProgress inline />
               </div>
             )}
             <Onboarding />
@@ -133,6 +142,7 @@ export default function App() {
       <DropOverlay visible={dragging} />
       <CommandPalette />
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      <SpaceDialog />
       <Toasts />
     </div>
   );

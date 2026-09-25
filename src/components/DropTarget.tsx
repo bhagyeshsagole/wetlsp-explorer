@@ -76,7 +76,7 @@ export function DropOverlay({ visible }: { visible: boolean }) {
         <FolderDown size={28} className="text-[var(--accent)]" />
         <div className="text-[15px] font-semibold">Drop to import</div>
         <div className="text-[12.5px] text-[var(--text-muted)]">
-          A site folder, or just its files
+          A site folder, a folder of sites, or .zip downloads
         </div>
       </div>
     </div>
@@ -121,7 +121,7 @@ export function useImportActions() {
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true;
-    input.accept = '.parquet,.nc,.nc4,.md,.json';
+    input.accept = '.parquet,.nc,.nc4,.md,.json,.zip';
     input.onchange = async () => {
       if (!input.files?.length) return;
       await importEntries(entriesFromFileList(input.files));

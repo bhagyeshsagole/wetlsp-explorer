@@ -8,7 +8,7 @@ import { HexagonLayer } from '@deck.gl/aggregation-layers';
 import type { Layer, PickingInfo } from '@deck.gl/core';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import {
-  Crosshair, Download, Eraser, LassoSelect, MapPin, MousePointer2, Send, Square,
+  Crosshair, Eraser, LassoSelect, MapPin, MousePointer2, Send, Square,
 } from 'lucide-react';
 import { MapCanvas, type MapCanvasHandle } from '@/components/MapCanvas';
 import { Button, Card, Chip, EmptyState, Field, Segmented, Slider } from '@/components/ui';
@@ -18,7 +18,9 @@ import { ErrorPanel, seriesColor, useAsyncData, useBasemap, useDark } from './sh
 import { getPixelMeans, getPixelTrace, pixelsInPolygon } from '@/engine/queries';
 import { nearestPixelIndex } from '@/lib/pixelPicking';
 import { GREENNESS_RAMP, sampleRamp } from '@/lib/colorscales';
-import { downloadCompositePng, downloadCsv, exportBackground, timestampedName } from '@/lib/export';
+import { compositeCanvas, downloadBlob, downloadCsv, exportBackground, timestampedName } from '@/lib/export';
+import { canvasToBlob, copyImage } from '@/lib/figure';
+import { FigureMenu } from '@/components/FigureMenu';
 import { formatCount, formatValue, isoFromMs } from '@/lib/format';
 import type { PixelGeometry } from '@/lib/types';
 
@@ -250,15 +252,19 @@ export function PixelMapView() {
     [geometry, selectionCap, setSelection, toast],
   );
 
-  const exportPng = async () => {
+  const mapImage = () => {
     mapRef.current?.repaint();
     const canvas = mapRef.current?.canvas();
-    if (!canvas) return;
-    await downloadCompositePng(
-      [canvas],
-      timestampedName([site?.manifest.siteId, mode3d ? 'hexbin' : 'pixels'], 'png'),
-      exportBackground(),
-    );
+    if (!canvas) throw new Error('The map is not ready yet.');
+    return compositeCanvas([canvas], exportBackground());
+  };
+  const figureActions = {
+    save: async () =>
+      downloadBlob(
+        await canvasToBlob(mapImage()),
+        timestampedName([site?.manifest.siteId, mode3d ? 'hexbin' : 'pixels'], 'png'),
+      ),
+    copy: () => copyImage(canvasToBlob(mapImage())),
   };
 
   if (!site) {
@@ -350,9 +356,7 @@ export function PixelMapView() {
           >
             {means.loading ? 'Averaging…' : 'Mean EVI'}
           </Button>
-          <Button size="sm" icon={<Download size={13} />} onClick={exportPng}>
-            PNG
-          </Button>
+          <FigureMenu actions={figureActions} />
         </div>
       </div>
 

@@ -58,14 +58,17 @@ may require IT approval. An administrator password is normally not needed.
 ## Open your data
 
 1. Select **Upload folder** in WetLSP Explorer.
-2. Choose one complete WetLSP site folder, such as **CA-DB2**. You can also drag
-   the folder into the app.
+2. Choose a WetLSP site folder such as **CA-DB2**, a folder holding several
+   sites, or the `.zip` files downloaded from Google Drive. You can also drag
+   them into the app.
 3. Wait until it appears in **Loaded sites**.
 4. Explore **Overview**, **Time Series**, **Pixel Map**, **Phenometrics**, and
    **Catalog** using the tabs.
 
-Choose the site folder itself, not a parent folder containing many sites.
-Keep its parquet files, any batch subfolders, and annual `.nc` files together.
+Each site is detected and imported separately, one after another. Keep each
+site's parquet files, any batch subfolders, and annual `.nc` files together.
+The app stores up to 50 GB of sites. If an import needs more room, it asks you
+to delete a site before continuing.
 The first import may take a while for large datasets. Keep the app open until
 it finishes. Imported data stays on your computer.
 
@@ -104,3 +107,15 @@ Always keep the original dataset folders as your permanent copy.
 - **Local port 47831 is in use:** close another copy of WetLSP Explorer. If the message
   remains, restart the computer or ask IT which program is using that port.
 - **Plain map while offline:** expected; imagery is online content, while the analysis is local.
+
+## Building the installer with sample sites (maintainers)
+
+The installer ships five sample sites that load on first launch. Before
+`npm run desktop:dist`, extract them from the lab's Drive downloads:
+
+```sh
+npm run samples          # reads ../Actual Data/*.zip into samples/ (≈1.3 GB, git-ignored)
+npm run desktop:dist
+```
+
+`SAMPLES_SRC=/path/to/zips npm run samples` reads from elsewhere.

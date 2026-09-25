@@ -289,3 +289,80 @@ export function manifestFromDetection(d: DetectionResult): SiteManifest {
     importedAt: Date.now(),
   };
 }
+
+/* ------------------------------------------------------- multi-site input */
+
+/** True for a file that belongs to a WetLSP site (not a readme or stray file). */
+function isSiteData(path: string): boolean {
+  const ext = extension(path);
+  if (ext === 'nc' || ext === 'nc4' || ext === 'netcdf') return parseNetcdfName(path).year !== null;
+  if (ext !== 'parquet') return false;
+  const normDir = normalise(dirname(path));
+  const normBase = normalise(basename(path));
+  return TABLE_PATTERNS.some((p) => p.dir.test(normDir) || p.re.test(normBase));
+}
+
+/** The folder a data file's site lives in; `_ds` batch folders belong to their parent. */
+function siteRootOf(path: string): string {
+  const dir = dirname(path);
+  return TABLE_PATTERNS.some((p) => p.dir.test(normalise(dir))) ? dirname(dir) : dir;
+}
+
+/** `CA-DSM-20260925T181322Z-1-001.zip` -> `CA-DSM`, for use as a folder hint. */
+export function cleanFolderHint(name: string): string {
+  return name.replace(/\.zip$/i, '').replace(/-\d{8}T\d{6}Z(-\d+)*$/, '');
+}
+
+export interface SiteGroup<T extends InputFile> {
+  /** Folder name to break site-id ties with, when the files do not say. */
+  hint?: string;
+  /** Files with paths relative to their own site folder. */
+  files: T[];
+}
+
+/**
+ * Split a folder that holds several sites (a parent folder, a drop of five
+ * zips) into one group per site. A folder that holds one site comes back as a
+ * single group, untouched — exactly what the importer always did.
+ *
+ * Sites whose files are spread across sibling folders or several archive parts
+ * (Drive's `-1-001.zip`, `-1-002.zip`) are merged back together by site id,
+ * with each file rebased onto its own site folder so `_ds` batches line up.
+ */
+export function splitSites<T extends InputFile>(input: T[]): SiteGroup<T>[] {
+  const files = input.filter((f) => !basename(f.path).startsWith('.'));
+  const roots = new Map<string, T[]>();
+  for (const f of files) {
+    if (!isSiteData(f.path)) continue;
+    const root = siteRootOf(f.path);
+    const list = roots.get(root);
+    if (list) list.push(f);
+    else roots.set(root, [f]);
+  }
+  if (roots.size <= 1) return [{ files: input }];
+
+  // Readmes and other extras travel with the site folder they sit in.
+  const rootList = [...roots.keys()].sort((a, b) => b.length - a.length);
+  for (const f of files) {
+    if (isSiteData(f.path)) continue;
+    const owner = rootList.find((r) => r === '' || f.path.startsWith(`${r}/`));
+    if (owner !== undefined && owner === dirname(f.path)) roots.get(owner)!.push(f);
+  }
+
+  const merged = new Map<string, SiteGroup<T>>();
+  for (const [root, list] of roots) {
+    const hint = cleanFolderHint(basename(root)) || undefined;
+    const rebased = list.map((f) => ({
+      ...f,
+      path: root ? f.path.slice(root.length + 1) : f.path,
+    }));
+    const id = normalise(detectDataset(rebased, hint).siteId);
+    const existing = merged.get(id);
+    if (existing) existing.files.push(...rebased);
+    else merged.set(id, { hint, files: rebased });
+  }
+  if (merged.size === 1) return [{ files: input }];
+  return [...merged.values()].sort((a, b) =>
+    (a.hint ?? '').localeCompare(b.hint ?? '', 'en', { numeric: true }),
+  );
+}
