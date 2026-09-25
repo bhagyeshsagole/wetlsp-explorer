@@ -1,3 +1,7 @@
+**Fixed in v1.1.1: Copy.** The *Copy* button (and ⌘⇧C / Ctrl+Shift+C) failed
+in the desktop app with "Write permission denied". Charts and maps now copy to
+the clipboard as images.
+
 **New in v1.1.0**
 
 - **Download sample sites in one click.** The start screen's *Download sample
