@@ -19,7 +19,7 @@ declare module 'plotly.js-dist-min' {
   export function relayout(root: HTMLElement, update: PlotLayout): Promise<HTMLElement>;
   export function Plots(): void;
   export function toImage(
-    root: HTMLElement,
+    root: HTMLElement | { data: PlotData[]; layout: PlotLayout; config?: PlotConfig },
     opts: { format: string; width?: number; height?: number; scale?: number },
   ): Promise<string>;
   export function downloadImage(

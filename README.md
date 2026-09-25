@@ -59,14 +59,17 @@ Only do this for installers from this repository or your lab.
 
 ## Open your first site
 
+The desktop app opens with five sample sites already loaded (CA-DSM, FR-LGt,
+BR-SM1, US-BZF, CZ-Wet). To add your own:
+
 1. Click **Upload folder**.
-2. Choose one site folder, such as **CA-DB2** — the site folder itself, not a
-   parent folder holding many sites.
+2. Choose a site folder such as **CA-DB2**, a folder holding several sites, or
+   a folder of the `.zip` files Google Drive downloads. Each site is found and
+   imported separately.
 3. Wait for the import to finish, then pick a view.
 
-You can also drag a folder onto the window or select individual files. Keep each
-site's parquet files, batch subfolders, and annual `.nc` files together. Both
-single-file and batched `_ds` datasets work.
+You can also drag folders or `.zip` files onto the window, or pick individual
+files. Both single-file and batched `_ds` datasets work.
 
 ---
 
@@ -75,7 +78,7 @@ single-file and batched `_ds` datasets work.
 | View | Use it to |
 | --- | --- |
 | **Overview** | Locate a site; check its dates, pixel coverage, years, and metadata. |
-| **Time Series** | Compare raw and spline curves, read daily means and interquartile ranges, export results. |
+| **Time Series** | Line chart of daily mean EVI with its interquartile band and estimated green-up, peak and green-down dates; overlay years; show every pixel; export results. |
 | **Pixel Map** | Select pixels or draw a region, then inspect that selection's time series. |
 | **Phenometrics** | Examine timing, greenness, and quality layers; compare up to four site-years. |
 | **Catalog** | Search the bundled 95-site catalog and export site information. |
@@ -92,6 +95,19 @@ launch. Only basemap imagery needs a connection.
 
 Keep your original dataset folders as your permanent copy. Imported sites and
 preferences are stored separately from the app, so they survive updates.
+
+Imported data can use up to **50 GB**, or less if your disk has less free
+space. When an import would go over, the app asks you to delete a site first.
+Manage sites in **Settings → Storage**. Deleted sample sites can be restored
+from **Settings → Sample sites**.
+
+### Figures
+
+Every chart and map has **PNG** and **Copy** buttons. Copy puts the image on
+the clipboard for slides or chat. Shortcuts: **⌘S** / **Ctrl+S** saves, and
+**⌘⇧C** / **Ctrl+Shift+C** copies. Exports carry a title with the site, year
+and sample size. The **⋯** menu adds a vector SVG, a 1920×1080 slide PNG, CSVs,
+and a ready-to-paste figure caption that describes exactly what is plotted.
 
 ---
 

@@ -6,9 +6,23 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import type { PlotConfig, PlotData, PlotLayout } from 'plotly.js-dist-min';
 import { Skeleton } from './ui';
 
+export interface ExportOptions {
+  format?: 'png' | 'svg';
+  /** Bold first line stamped above the plot, e.g. "CA-DSM · spline EVI · 2024". */
+  title?: string;
+  /** Smaller second line: sample size, date range, source. */
+  subtitle?: string;
+  width?: number;
+  height?: number;
+  scale?: number;
+  background?: string;
+}
+
 export interface PlotlyHandle {
   element(): HTMLDivElement | null;
   toPng(filename: string): Promise<void>;
+  /** Render a standalone, titled copy of the chart. Returns a data URL. */
+  toImage(opts: ExportOptions): Promise<string>;
 }
 
 type PlotlyModule = typeof import('plotly.js-dist-min');
@@ -41,6 +55,46 @@ export const PlotlyChart = forwardRef<
       const plotly = plotlyRef.current;
       if (!el || !plotly) throw new Error('The chart is not ready to export yet.');
       await plotly.downloadImage(el, { format: 'png', filename, scale: 2 });
+    },
+    toImage: async (opts: ExportOptions) => {
+      const el = hostRef.current as (HTMLDivElement & { data?: PlotData[]; layout?: PlotLayout }) | null;
+      const plotly = plotlyRef.current;
+      if (!el?.data || !el.layout || !plotly) throw new Error('The chart is not ready to export yet.');
+      const width = opts.width ?? Math.max(900, el.clientWidth);
+      const height = opts.height ?? Math.max(520, el.clientHeight);
+      const margin = (el.layout.margin as Record<string, number> | undefined) ?? {};
+      const title = opts.title
+        ? {
+            text: `<b>${escapeHtml(opts.title)}</b>${
+              opts.subtitle ? `<br><span style="font-size:12px">${escapeHtml(opts.subtitle)}</span>` : ''
+            }`,
+            x: 0.01,
+            xanchor: 'left',
+            // Container coordinates: the title sits in the top margin, never clipped.
+            xref: 'container',
+            yref: 'container',
+            y: 1,
+            yanchor: 'top',
+            pad: { t: 16, l: 8 },
+            font: { size: 17 },
+          }
+        : undefined;
+      const layout: PlotLayout = {
+        ...el.layout,
+        width,
+        height,
+        // A transparent export looks broken when pasted onto a dark slide.
+        paper_bgcolor: opts.background ?? '#ffffff',
+        plot_bgcolor: opts.background ?? '#ffffff',
+        ...(title
+          ? { title, margin: { ...margin, t: (margin.t ?? 14) + (opts.subtitle ? 74 : 52) } }
+          : {}),
+        legend: { ...((el.layout.legend as object) ?? {}), y: 1.02, yanchor: 'bottom' },
+      };
+      return plotly.toImage(
+        { data: el.data, layout },
+        { format: opts.format ?? 'png', width, height, scale: opts.scale ?? 2 },
+      );
     },
   }));
 
@@ -75,6 +129,18 @@ export const PlotlyChart = forwardRef<
     </div>
   );
 });
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+}
+
+/** A data URL from `toImage` as a Blob, for downloads and the clipboard. */
+export async function dataUrlToBlob(url: string): Promise<Blob> {
+  if (url.startsWith('data:image/svg+xml,')) {
+    return new Blob([decodeURIComponent(url.slice('data:image/svg+xml,'.length))], { type: 'image/svg+xml' });
+  }
+  return (await fetch(url)).blob();
+}
 
 /** Layout defaults shared by every chart, in the current theme's tokens. */
 export function plotTheme(dark: boolean): PlotLayout {

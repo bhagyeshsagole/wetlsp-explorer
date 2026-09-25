@@ -5,14 +5,16 @@
 import { useMemo, useRef } from 'react';
 import { ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import type { PickingInfo } from '@deck.gl/core';
-import { Download, MapPin, Upload } from 'lucide-react';
+import { MapPin, Upload } from 'lucide-react';
 import { MapCanvas, type MapCanvasHandle } from '@/components/MapCanvas';
 import { Button, Card, Chip, EmptyState, StatTile } from '@/components/ui';
 import { useAppStore, type SiteState } from '@/store/useAppStore';
 import { useImportActions } from '@/components/DropTarget';
 import { useBasemap, useDark } from './shared';
 import { formatBytes, formatCount, formatValue } from '@/lib/format';
-import { downloadCompositePng, exportBackground, timestampedName } from '@/lib/export';
+import { compositeCanvas, downloadBlob, exportBackground, timestampedName } from '@/lib/export';
+import { canvasToBlob, copyImage } from '@/lib/figure';
+import { FigureMenu } from '@/components/FigureMenu';
 import type { CatalogSite } from '@/lib/types';
 import { nearestPixelIndex } from '@/lib/pixelPicking';
 
@@ -162,16 +164,16 @@ export function OverviewView() {
     if (loadedId) void selectSite(loadedId);
   };
 
-  const exportPng = async () => {
-    const canvas = mapRef.current?.canvas();
+  const mapImage = () => {
     mapRef.current?.repaint();
-    if (canvas) {
-      await downloadCompositePng(
-        [canvas],
-        timestampedName(['wetlsp', 'overview'], 'png'),
-        exportBackground(),
-      );
-    }
+    const canvas = mapRef.current?.canvas();
+    if (!canvas) throw new Error('The map is not ready yet.');
+    return compositeCanvas([canvas], exportBackground());
+  };
+  const figureActions = {
+    save: async () =>
+      downloadBlob(await canvasToBlob(mapImage()), timestampedName(['wetlsp', 'overview'], 'png')),
+    copy: () => copyImage(canvasToBlob(mapImage())),
   };
 
   if (mapSites.length === 0) {
@@ -213,9 +215,7 @@ export function OverviewView() {
         </span>
       </div>
       <div className="absolute right-3 top-3 z-10">
-        <Button size="sm" icon={<Download size={13} />} onClick={exportPng}>
-          PNG
-        </Button>
+        <FigureMenu actions={figureActions} />
       </div>
     </MapCanvas>
   );

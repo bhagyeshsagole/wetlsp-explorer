@@ -30,3 +30,24 @@ test('desktop file server confines requests to bundled files', async () => {
     await rm(root, {recursive: true, force: true});
   }
 });
+
+test('bundled sample sites are served read-only under /samples/', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'wetlsp-server-'));
+  const samples = await mkdtemp(join(tmpdir(), 'wetlsp-samples-'));
+  await writeFile(join(root, 'index.html'), '<h1>WetLSP</h1>');
+  await writeFile(join(samples, 'index.json'), '{"sites":[]}');
+  await writeFile(join(root, 'secret.txt'), 'app file');
+  const server = await startServer(root, 0, samples);
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  try {
+    assert.equal(await (await fetch(origin + '/samples/index.json')).text(), '{"sites":[]}');
+    assert.equal((await fetch(origin + '/samples/..%2fsecret.txt')).status, 403);
+    assert.equal((await fetch(origin + '/samples/missing.parquet')).status, 404);
+    assert.equal((await fetch(origin + '/samples/index.json', { method: 'POST' })).status, 405);
+    assert.equal(await (await fetch(origin)).text(), '<h1>WetLSP</h1>');
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    await rm(root, {recursive: true, force: true});
+    await rm(samples, {recursive: true, force: true});
+  }
+});

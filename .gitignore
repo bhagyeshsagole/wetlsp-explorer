@@ -14,6 +14,9 @@ desktop-smoke-results/
 *.local
 .DS_Store
 
+# Bundled sample sites (≈1.4 GB), rebuilt by `npm run samples`
+samples/
+
 # DuckDB binaries are restored from the npm package during build
 public/duckdb/*
 !public/duckdb/.gitkeep
