@@ -10,7 +10,7 @@ A desktop app for **Mac** and **Windows**. Your data stays on your computer.
 | Install the app | [Download](#download) below |
 | Follow step-by-step instructions | **[SETUP.md](SETUP.md)** |
 | Fix a problem | [Troubleshooting](SETUP.md#if-something-goes-wrong) |
-| See what the app does | [The five views](#the-five-views) |
+| See what the app does | [The five views](#the-five-views) · [Video walkthrough](#video-walkthrough) |
 
 ---
 
@@ -119,3 +119,15 @@ and a ready-to-paste figure caption that describes exactly what is plotted.
 Manual for now: close the app, download the new installer from
 [Releases](https://github.com/bhagyeshsagole/wetlsp-explorer/releases/latest),
 and install it over your existing copy. [Details](SETUP.md#updates-and-saved-data).
+
+---
+
+## Video walkthrough
+
+See WetLSP Explorer in action: **Gavin's WetLSP** (YouTube).
+
+<a href="https://youtu.be/ggAGSodHSn0">
+  <img src="https://img.youtube.com/vi/ggAGSodHSn0/maxresdefault.jpg" alt="Gavin's WetLSP: video walkthrough of WetLSP Explorer (click to play on YouTube)" width="720">
+</a>
+
+[▶ Watch on YouTube](https://youtu.be/ggAGSodHSn0)
