@@ -31,23 +31,46 @@ test('desktop file server confines requests to bundled files', async () => {
   }
 });
 
-test('bundled sample sites are served read-only under /samples/', async () => {
+test('sample downloads proxy only named assets of the fixed release', async () => {
   const root = await mkdtemp(join(tmpdir(), 'wetlsp-server-'));
-  const samples = await mkdtemp(join(tmpdir(), 'wetlsp-samples-'));
   await writeFile(join(root, 'index.html'), '<h1>WetLSP</h1>');
-  await writeFile(join(samples, 'index.json'), '{"sites":[]}');
-  await writeFile(join(root, 'secret.txt'), 'app file');
-  const server = await startServer(root, 0, samples);
+  // A stand-in for GitHub: one redirect, then the file, like release downloads.
+  const { createServer } = await import('node:http');
+  const seen = [];
+  const upstream = createServer((req, res) => {
+    seen.push(req.url);
+    if (req.url === '/rel/CA-DSM--README.md') { res.writeHead(302, { Location: '/blob/readme' }).end(); return; }
+    if (req.url === '/blob/readme') { res.writeHead(200, { 'Content-Length': 5 }).end('hello'); return; }
+    res.writeHead(404).end();
+  });
+  await new Promise(r => upstream.listen(0, '127.0.0.1', r));
+  const releaseBase = `http://127.0.0.1:${upstream.address().port}/rel/`;
+  const server = await startServer(root, 0, { releaseBase });
   const origin = `http://127.0.0.1:${server.address().port}`;
   try {
-    assert.equal(await (await fetch(origin + '/samples/index.json')).text(), '{"sites":[]}');
-    assert.equal((await fetch(origin + '/samples/..%2fsecret.txt')).status, 403);
-    assert.equal((await fetch(origin + '/samples/missing.parquet')).status, 404);
-    assert.equal((await fetch(origin + '/samples/index.json', { method: 'POST' })).status, 405);
-    assert.equal(await (await fetch(origin)).text(), '<h1>WetLSP</h1>');
+    const ok = await fetch(origin + '/remote-samples/CA-DSM--README.md');
+    assert.equal(ok.status, 200);
+    assert.equal(await ok.text(), 'hello');
+    assert.equal((await fetch(origin + '/remote-samples/missing.parquet')).status, 404);
+    assert.equal((await fetch(origin + '/remote-samples/..%2f..%2fetc%2fpasswd')).status, 403);
+    assert.equal((await fetch(origin + '/remote-samples/https:%2f%2fevil.example%2fx')).status, 403);
+    assert.equal((await fetch(origin + '/remote-samples/a', { method: 'POST' })).status, 405);
+    assert.ok(seen.every(u => u.startsWith('/rel/') || u.startsWith('/blob/')));
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    await new Promise(resolve => upstream.close(resolve));
+    await rm(root, {recursive: true, force: true});
+  }
+});
+
+test('sample downloads report offline when the release cannot be reached', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'wetlsp-server-'));
+  const server = await startServer(root, 0, { releaseBase: 'http://127.0.0.1:1/' });
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  try {
+    assert.equal((await fetch(origin + '/remote-samples/CA-DSM--README.md')).status, 502);
   } finally {
     await new Promise(resolve => server.close(resolve));
     await rm(root, {recursive: true, force: true});
-    await rm(samples, {recursive: true, force: true});
   }
 });

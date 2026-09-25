@@ -25,6 +25,8 @@ export interface IngestEntry {
   /** A real file on disk. Archive members and bundled samples stream instead. */
   file?: File;
   open?: () => Promise<ReadableStream<Uint8Array>>;
+  /** Network downloads: a dropped connection retries the file a few times. */
+  retryable?: boolean;
 }
 
 export function fileEntry(path: string, file: File): IngestEntry {
@@ -198,6 +200,33 @@ export async function pickDirectory(): Promise<IngestEntry[] | null> {
 
 /* -------------------------------------------------------------- ingest */
 
+/**
+ * Copy one file, retrying downloads that drop part-way: flaky Wi-Fi should
+ * cost a few seconds, not the whole import. Progress rewinds on each retry.
+ */
+async function copyWithRetry(
+  siteId: string,
+  entry: IngestEntry,
+  onBytes: (n: number) => void,
+  signal?: AbortSignal,
+): Promise<number> {
+  const attempts = entry.retryable ? 4 : 1;
+  for (let attempt = 1; ; attempt++) {
+    let counted = 0;
+    try {
+      return await copyToOpfs(siteId, entry, (n) => {
+        counted += n;
+        onBytes(n);
+      });
+    } catch (err) {
+      onBytes(-counted);
+      const quota = err instanceof DOMException && err.name === 'QuotaExceededError';
+      if (attempt >= attempts || quota || signal?.aborted) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
+    }
+  }
+}
+
 /** Copy one file into OPFS, counting bytes so progress stays honest on a 190 MB parquet. */
 async function copyToOpfs(
   siteId: string,
@@ -348,24 +377,30 @@ export async function ingestEntries(
   await requestPersistence();
 
   const isNew = !(await loadManifest(siteId));
+  const phase = toCopy.some((e) => e.retryable) ? 'Downloading' : 'Copying into offline storage';
   let done = 0;
   let bytesWritten = 0;
   try {
     for (const entry of toCopy) {
       if (opts.signal?.aborted) throw new Error('Import cancelled.');
       progress({
-        phase: 'Copying into offline storage',
+        phase,
         fraction: total > 0 ? done / total : null,
         detail: entry.path,
       });
-      bytesWritten += await copyToOpfs(siteId, entry, (n) => {
-        done += n;
-        progress({
-          phase: 'Copying into offline storage',
-          fraction: total > 0 ? Math.min(1, done / total) : null,
-          detail: entry.path,
-        });
-      });
+      bytesWritten += await copyWithRetry(
+        siteId,
+        entry,
+        (n) => {
+          done += n;
+          progress({
+            phase,
+            fraction: total > 0 ? Math.min(1, done / total) : null,
+            detail: entry.path,
+          });
+        },
+        opts.signal,
+      );
     }
   } catch (err) {
     // A half-copied new site would be invisible yet still use disk space.

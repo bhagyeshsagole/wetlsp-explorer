@@ -1,7 +1,17 @@
-**Fixed in v1.0.3 — macOS "app is damaged" error.** Earlier Mac builds shipped with
-an invalid code signature, so macOS refused to open them and offered only *Move to
-Trash*. These builds are signed correctly. If you hit that error before, download
-the installer below; no Terminal commands are needed.
+**New in v1.1.0**
+
+- **Download sample sites in one click.** The start screen's *Download sample
+  sites* button fetches five wetland sites (CA-DSM, FR-LGt, BR-SM1, US-BZF,
+  CZ-Wet; 1.3 GB) and opens the first. No files to find and no unzipping; after
+  that, they work offline.
+- **Upload folder works with any folder.** Pick a folder holding several sites,
+  or the `.zip` files Google Drive downloads. Each site is found and imported in turn.
+- **Time series line chart.** Daily mean, interquartile band and estimated
+  green-up, peak and green-down dates, with a *Compare years* view. Per-pixel
+  lines are one toggle away.
+- **Copy and export figures.** *Copy* puts any chart or map on the clipboard.
+  Exports are titled, and the menu adds SVG, slide-sized PNG and a figure caption.
+- **Up to 50 GB of sites.** When storage is full, the app asks you to delete a site first.
 
 ---
 

@@ -59,8 +59,11 @@ Only do this for installers from this repository or your lab.
 
 ## Open your first site
 
-The desktop app opens with five sample sites already loaded (CA-DSM, FR-LGt,
-BR-SM1, US-BZF, CZ-Wet). To add your own:
+To try the app straight away, click **Download sample sites** on the start
+screen. It fetches five wetland sites (CA-DSM, FR-LGt, BR-SM1, US-BZF, CZ-Wet;
+1.3 GB) from the lab's [public data release](https://github.com/bhagyeshsagole/wetlsp-sample-data/releases/tag/v1)
+and opens the first one. After that download, the sites work offline. To add
+your own data:
 
 1. Click **Upload folder**.
 2. Choose a site folder such as **CA-DB2**, a folder holding several sites, or
@@ -98,8 +101,8 @@ preferences are stored separately from the app, so they survive updates.
 
 Imported data can use up to **50 GB**, or less if your disk has less free
 space. When an import would go over, the app asks you to delete a site first.
-Manage sites in **Settings → Storage**. Deleted sample sites can be restored
-from **Settings → Sample sites**.
+Manage sites in **Settings → Storage**. Deleted sample sites can be downloaded
+again from **Settings → Sample sites**.
 
 ### Figures
 

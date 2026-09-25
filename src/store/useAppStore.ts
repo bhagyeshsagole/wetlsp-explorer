@@ -23,7 +23,7 @@ import {
 import { indexCatalog, loadCatalog } from '@/lib/catalog';
 import { expandArchives, ingestEntries, type IngestEntry } from '@/lib/ingest';
 import { splitSites } from '@/lib/detect';
-import { loadSampleIndex, sampleEntries, type SampleSite } from '@/lib/samples';
+import { sampleEntries, sampleSites, type SampleSite } from '@/lib/samples';
 import { formatBytes } from '@/lib/format';
 import { clearQueryCaches, getPixelGeometry, getSiteFacts, getSiteMeta } from '@/engine/queries';
 import { unregisterSite } from '@/engine/duckdb';
@@ -141,7 +141,7 @@ interface AppState {
   timeseries: TimeseriesSettings;
   phenometrics: PhenometricSettings;
 
-  /** Sites bundled with the desktop app; empty elsewhere. */
+  /** Sample sites the desktop app can download; empty in the hosted web build. */
   samples: SampleSite[];
 
   /* transient */
@@ -257,21 +257,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   async boot() {
     if (get().booted) return;
 
-    const [theme, onboardingDone, rail, basemap, tsPrefs, samplesOffered] = await Promise.all([
+    const [theme, onboardingDone, rail, basemap, tsPrefs] = await Promise.all([
       loadSetting<ThemeMode>('theme'),
       loadSetting<boolean>('onboarding.done'),
       loadSetting<boolean>('rail.collapsed'),
       loadSetting<BasemapId | 'auto'>('basemap'),
       loadSetting<Partial<TimeseriesSettings>>('timeseries.chart'),
-      loadSetting<boolean>('samples.offered'),
     ]);
     applyTheme(theme ?? 'light');
 
-    const [manifests, catalog, samples] = await Promise.all([
-      loadAllManifests(),
-      loadCatalog(),
-      loadSampleIndex(),
-    ]);
+    const [manifests, catalog] = await Promise.all([loadAllManifests(), loadCatalog()]);
+    const samples = sampleSites();
 
     const sites: Record<string, SiteState> = {};
     for (const manifest of manifests) {
@@ -305,22 +301,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const first = manifests[0]?.siteId ?? null;
     if (first) void get().selectSite(first);
-
-    // First launch of a build that bundles sample sites: load them, so the app
-    // opens with real data. Offered once; after that deletions stick and
-    // Settings can restore them.
-    if (samples.length > 0 && !samplesOffered) {
-      void saveSetting('samples.offered', true);
-      if (manifests.length === 0) {
-        void get().installSamples();
-      } else {
-        get().toast({
-          kind: 'info',
-          title: `${samples.length} sample sites are available`,
-          detail: 'Add them from Settings → Sample sites.',
-        });
-      }
-    }
   },
 
   setTheme(t) {
@@ -400,6 +380,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       (s) => (siteIds ? siteIds.includes(s.siteId) : true) && !get().sites[s.siteId],
     );
     if (wanted.length === 0) return;
+    if (!navigator.onLine) {
+      get().toast({
+        kind: 'error',
+        title: 'No internet connection',
+        detail: 'The sample sites download once, then work offline. Connect and try again.',
+        ttl: 8000,
+      });
+      return;
+    }
     await runImport(
       wanted.map((s) => ({ entries: sampleEntries(s), hint: s.siteId, origin: 'sample' as const })),
     );

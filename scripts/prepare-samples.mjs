@@ -1,12 +1,12 @@
 /**
- * Build `samples/` — the sites the desktop installer ships and loads on first
- * launch. Extracts the lab's Drive downloads and writes `samples/index.json`.
+ * Build `samples/`, the sample sites the app's "Download sample sites" button
+ * offers. Extracts the lab's Drive downloads and writes `samples/index.json`;
+ * `npm run samples:publish` then uploads them to the public release.
  *
  *   npm run samples                       # reads ../Actual Data/*.zip
  *   SAMPLES_SRC=/path/to/zips npm run samples
  *
- * Re-running replaces `samples/`. The folder is git-ignored (≈1.4 GB); only
- * `npm run desktop:dist` needs it, via electron-builder `extraResources`.
+ * Re-running replaces `samples/`. The folder is git-ignored (≈1.4 GB).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
