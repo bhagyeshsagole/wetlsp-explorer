@@ -20,11 +20,13 @@ else {
   app.whenReady().then(async () => {
     server = await startServer(join(app.getAppPath(), 'dist'));
     // Scientific analysis needs no camera, microphone, location or notifications.
+    // Figures may be written to the clipboard (Copy button); reading it is not allowed.
+    const allowed = ['persistent-storage', 'fileSystem', 'clipboard-sanitized-write'];
     session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
-      callback(contents?.getURL().startsWith(ORIGIN + '/') && ['persistent-storage', 'fileSystem'].includes(permission));
+      callback(Boolean(contents?.getURL().startsWith(ORIGIN + '/') && allowed.includes(permission)));
     });
     session.defaultSession.setPermissionCheckHandler((contents, permission) =>
-      Boolean(contents?.getURL().startsWith(ORIGIN + '/') && ['persistent-storage', 'fileSystem'].includes(permission)));
+      Boolean(contents?.getURL().startsWith(ORIGIN + '/') && allowed.includes(permission)));
     if (smoke) {
       // Prove the packaged app starts with no external network, including a
       // fresh profile with no cached shell or WASM.
